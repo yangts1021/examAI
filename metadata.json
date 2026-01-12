@@ -1,0 +1,5 @@
+{
+  "name": "ExamAI 考題大師",
+  "description": "使用 Gemini 分析試卷並結合 Google Sheets 進行考題管理與測驗的智慧系統。",
+  "requestFramePermissions": []
+}
