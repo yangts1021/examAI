@@ -1,8 +1,6 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { ExamPaperData } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-
 const examSchema: Schema = {
   type: Type.OBJECT,
   properties: {
@@ -35,6 +33,12 @@ const examSchema: Schema = {
 };
 
 export const analyzeExamImage = async (base64Image: string, mimeType: string): Promise<ExamPaperData> => {
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Gemini API Key is missing. Please check your configuration.");
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
   const maxRetries = 3;
   let lastError;
 
@@ -80,7 +84,7 @@ export const analyzeExamImage = async (base64Image: string, mimeType: string): P
     } catch (error: any) {
       console.warn(`Gemini Analysis Attempt ${attempt} failed:`, error);
       lastError = error;
-      
+
       // If it's the last attempt, don't wait, just let it throw in the final block
       if (attempt < maxRetries) {
         // Exponential backoff: 1000ms, 2000ms, 4000ms
