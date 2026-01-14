@@ -5,15 +5,15 @@ import { Question, QuizResult } from '../types';
 
 const QuizPage: React.FC = () => {
   const [step, setStep] = useState<'setup' | 'quiz' | 'result'>('setup');
-  
+
   const [subjects, setSubjects] = useState<string[]>([]);
   const [isSubjectsLoading, setIsSubjectsLoading] = useState(true);
-  
+
   const [subject, setSubject] = useState('');
   const [scope, setScope] = useState('');
   const [availableScopes, setAvailableScopes] = useState<string[]>([]);
   const [isScopesLoading, setIsScopesLoading] = useState(false);
-  
+
   const [questionCount, setQuestionCount] = useState<number>(5);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -82,10 +82,10 @@ const QuizPage: React.FC = () => {
         alert("在此科目/範圍找不到題目。");
         return;
       }
-      
+
       // --- Group-based Shuffling Logic Start ---
       const groups: Record<string, Question[]> = {};
-      
+
       // 1. Group questions
       q.forEach(question => {
         // Use groupId if available, otherwise create a unique key for single questions
@@ -105,21 +105,19 @@ const QuizPage: React.FC = () => {
 
       for (const key of groupKeys) {
         if (selectedQuestions.length >= limit) break;
-        
+
         // Ensure questions within a group are sorted by question number (if available) to maintain logical order
         const groupQuestions = groups[key].sort((a, b) => (a.questionNumber || 0) - (b.questionNumber || 0));
-        
+
         selectedQuestions.push(...groupQuestions);
       }
-      
+
       // Note: This might slightly exceed 'limit' if the last group added has multiple questions.
-      // We can choose to slice strictly or allow a slight overflow to keep groups intact.
-      // For user experience, keeping groups intact is better, but to be strict:
-      // selectedQuestions = selectedQuestions.slice(0, limit); 
-      // Let's stick to the limit to avoid confusion with the score denominator.
-      if (selectedQuestions.length > limit) {
-         selectedQuestions = selectedQuestions.slice(0, limit);
-      }
+      // We explicitly ALLOW this to keep groups intact.
+      // E.g. limit is 5, we have 4 questions, next group has 3. Total becomes 7.
+      // if (selectedQuestions.length > limit) {
+      //    selectedQuestions = selectedQuestions.slice(0, limit);
+      // }
 
       // --- Group-based Shuffling Logic End ---
 
@@ -154,7 +152,7 @@ const QuizPage: React.FC = () => {
 
     setResults(calcResults);
     setScore(correctCount);
-    
+
     setIsLoading(true);
     try {
       await saveQuizResult({
@@ -189,16 +187,16 @@ const QuizPage: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">科目</label>
             {isSubjectsLoading ? (
-               <div className="w-full rounded-lg border border-slate-300 p-2.5 bg-slate-100 text-slate-500 flex items-center">
-                 <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                 </svg>
-                 載入科目中...
-               </div>
+              <div className="w-full rounded-lg border border-slate-300 p-2.5 bg-slate-100 text-slate-500 flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                載入科目中...
+              </div>
             ) : subjects.length > 0 ? (
-              <select 
-                value={subject} 
+              <select
+                value={subject}
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
               >
@@ -217,16 +215,16 @@ const QuizPage: React.FC = () => {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">範圍 / 章節</label>
             {isScopesLoading ? (
-               <div className="w-full rounded-lg border border-slate-300 p-2.5 bg-slate-100 text-slate-500 flex items-center">
-                 <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                 </svg>
-                 載入範圍中...
-               </div>
+              <div className="w-full rounded-lg border border-slate-300 p-2.5 bg-slate-100 text-slate-500 flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                載入範圍中...
+              </div>
             ) : availableScopes.length > 0 ? (
-              <select 
-                value={scope} 
+              <select
+                value={scope}
                 onChange={(e) => setScope(e.target.value)}
                 className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
               >
@@ -235,17 +233,17 @@ const QuizPage: React.FC = () => {
                 ))}
               </select>
             ) : (
-               <div className="text-slate-500 text-sm p-2 bg-slate-50 rounded border border-slate-200">
-                  {subject ? "此科目目前沒有已儲存的考題範圍。" : "請先選擇科目"}
-               </div>
+              <div className="text-slate-500 text-sm p-2 bg-slate-50 rounded border border-slate-200">
+                {subject ? "此科目目前沒有已儲存的考題範圍。" : "請先選擇科目"}
+              </div>
             )}
           </div>
 
           {/* 題目數量選擇 */}
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">題目數量</label>
-            <select 
-              value={questionCount} 
+            <select
+              value={questionCount}
               onChange={(e) => setQuestionCount(Number(e.target.value))}
               className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
             >
@@ -259,9 +257,9 @@ const QuizPage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1">若資料庫題數不足，將顯示所有可用題目。</p>
           </div>
 
-          <Button 
-            onClick={startQuiz} 
-            className="w-full mt-4" 
+          <Button
+            onClick={startQuiz}
+            className="w-full mt-4"
             isLoading={isLoading}
             disabled={isSubjectsLoading || isScopesLoading || subjects.length === 0 || availableScopes.length === 0}
           >
@@ -281,7 +279,7 @@ const QuizPage: React.FC = () => {
             已作答 {Object.keys(answers).length} / {questions.length} 題
           </span>
         </div>
-        
+
         {questions.map((q, idx) => {
           // Check if we need to display the group passage
           // Display if: It has groupContent AND (it's the first question OR the previous question's groupId is different)
@@ -309,13 +307,13 @@ const QuizPage: React.FC = () => {
                   <span className="text-slate-400 mr-2">{idx + 1}.</span>
                   {q.text}
                 </h3>
-                
+
                 {/* 顯示題目配圖 (如果有) */}
                 {q.diagramUrl && (
                   <div className="mb-6 flex justify-center bg-slate-50 p-4 rounded-lg border border-slate-100">
-                    <img 
-                      src={q.diagramUrl} 
-                      alt={`Diagram for Question ${q.questionNumber || idx + 1}`} 
+                    <img
+                      src={q.diagramUrl}
+                      alt={`Diagram for Question ${q.questionNumber || idx + 1}`}
                       className="max-h-64 max-w-full object-contain rounded"
                     />
                   </div>
@@ -323,18 +321,17 @@ const QuizPage: React.FC = () => {
 
                 <div className="space-y-2">
                   {['A', 'B', 'C', 'D'].map((opt) => (
-                    <label 
-                      key={opt} 
-                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
-                        answers[idx] === opt 
-                          ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' 
+                    <label
+                      key={opt}
+                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${answers[idx] === opt
+                          ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500'
                           : 'border-slate-200 hover:bg-slate-50'
-                      }`}
+                        }`}
                     >
-                      <input 
-                        type="radio" 
-                        name={`q-${idx}`} 
-                        value={opt} 
+                      <input
+                        type="radio"
+                        name={`q-${idx}`}
+                        value={opt}
                         checked={answers[idx] === opt}
                         onChange={() => handleAnswerSelect(idx, opt)}
                         className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
@@ -353,8 +350,8 @@ const QuizPage: React.FC = () => {
         })}
 
         <div className="flex justify-end pt-6">
-          <Button 
-            onClick={submitQuiz} 
+          <Button
+            onClick={submitQuiz}
             disabled={Object.keys(answers).length !== questions.length}
             isLoading={isLoading}
           >
@@ -389,40 +386,40 @@ const QuizPage: React.FC = () => {
             <div key={idx} className="space-y-4">
               {showPassage && (
                 <div className="bg-slate-100 p-4 rounded-lg border-l-4 border-slate-400 text-sm text-slate-600">
-                   <p className="font-bold mb-1">[閱讀題組文章]</p>
-                   {q.groupContent}
+                  <p className="font-bold mb-1">[閱讀題組文章]</p>
+                  {q.groupContent}
                 </div>
               )}
-              
-              <div className={`p-6 rounded-xl border ${res.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-                 <div className="flex justify-between items-start mb-2">
-                   <h3 className="font-semibold text-slate-900">{q.text}</h3>
-                   <span className={`text-sm font-bold ${res.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                     {res.isCorrect ? '答對' : '答錯'}
-                   </span>
-                 </div>
-                 
-                 {q.diagramUrl && (
-                    <div className="my-3 flex justify-start">
-                      <img 
-                        src={q.diagramUrl} 
-                        alt="Question Diagram" 
-                        className="max-h-40 max-w-full object-contain rounded border border-slate-300 p-1 bg-white"
-                      />
-                    </div>
-                  )}
 
-                 <div className="text-sm text-slate-600 mb-2">
-                   你的答案： <span className="font-medium">{res.selectedAnswer}</span>
-                 </div>
-                 {!res.isCorrect && (
-                   <div className="text-sm text-green-700 font-medium mb-2">
-                     正確答案： {q.correctAnswer}
-                   </div>
-                 )}
-                 <div className="mt-4 p-3 bg-white/60 rounded-lg text-sm text-slate-700">
-                   <span className="font-bold">詳解： </span>{q.explanation}
-                 </div>
+              <div className={`p-6 rounded-xl border ${res.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-slate-900">{q.text}</h3>
+                  <span className={`text-sm font-bold ${res.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                    {res.isCorrect ? '答對' : '答錯'}
+                  </span>
+                </div>
+
+                {q.diagramUrl && (
+                  <div className="my-3 flex justify-start">
+                    <img
+                      src={q.diagramUrl}
+                      alt="Question Diagram"
+                      className="max-h-40 max-w-full object-contain rounded border border-slate-300 p-1 bg-white"
+                    />
+                  </div>
+                )}
+
+                <div className="text-sm text-slate-600 mb-2">
+                  你的答案： <span className="font-medium">{res.selectedAnswer}</span>
+                </div>
+                {!res.isCorrect && (
+                  <div className="text-sm text-green-700 font-medium mb-2">
+                    正確答案： {q.correctAnswer}
+                  </div>
+                )}
+                <div className="mt-4 p-3 bg-white/60 rounded-lg text-sm text-slate-700">
+                  <span className="font-bold">詳解： </span>{q.explanation}
+                </div>
               </div>
             </div>
           )
