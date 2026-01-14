@@ -42,6 +42,35 @@ npm run build
 2. 在 **Build and deployment** 下，選擇 Source 為 **GitHub Actions**
 3. 推送程式碼後，Action 會自動執行。
 
+## 前往新電腦開發 (Switching to a New Machine)
+若要更換電腦繼續開發，請遵循以下步驟：
+
+1. **Clone 專案**
+   ```bash
+   git clone <your-repo-url>
+   cd examAI
+   ```
+
+2. **安裝環境** (需安裝 Node.js v20+)
+   ```bash
+   nvm install 20
+   nvm use
+   npm install
+   ```
+
+3. **設定環境變數**
+   - 複製 `.env.example` 為 `.env` 或 `.env.local`
+   - 填入你的 `VITE_GEMINI_API_KEY`
+   ```bash
+   cp .env.example .env.local
+   # 編輯 .env.local 填入密鑰
+   ```
+
+4. **啟動開發伺服器**
+   ```bash
+   npm run dev
+   ```
+
 ## 專案結構
 - `/components`: 重用元件
 - `/pages`: 頁面元件
