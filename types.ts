@@ -13,6 +13,10 @@ export interface Question {
   diagramCoordinates?: number[]; 
   // 新增：前端裁切後的圖片 Base64
   diagramUrl?: string;
+  // 新增：題組 ID (用於識別多題共用同一文章)
+  groupId?: string;
+  // 新增：題組內容 (文章、對話、圖表敘述)
+  groupContent?: string;
 }
 
 export interface ExamPaperData {

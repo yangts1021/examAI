@@ -1,6 +1,8 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { ExamPaperData } from "../types";
 
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
 const examSchema: Schema = {
   type: Type.OBJECT,
   properties: {
@@ -23,7 +25,9 @@ const examSchema: Schema = {
             type: Type.ARRAY,
             description: "If the question has an accompanying diagram/image, provide the bounding box [ymin, xmin, ymax, xmax] on a 0-1000 scale. If no diagram, leave empty.",
             items: { type: Type.INTEGER }
-          }
+          },
+          groupId: { type: Type.STRING, description: "If this question belongs to a group (e.g., a reading comprehension set, or questions sharing a data table), assign a unique ID (e.g., 'group-1'). If it's a standalone question, leave empty." },
+          groupContent: { type: Type.STRING, description: "If this question belongs to a group, provide the SHARED content here (e.g., the full reading passage, the conversation text, or the data table description). Leave empty for standalone questions." }
         },
         required: ["text", "optionA", "optionB", "optionC", "optionD", "correctAnswer", "explanation"],
       },
@@ -33,12 +37,6 @@ const examSchema: Schema = {
 };
 
 export const analyzeExamImage = async (base64Image: string, mimeType: string): Promise<ExamPaperData> => {
-  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini API Key is missing. Please check your configuration.");
-  }
-
-  const ai = new GoogleGenAI({ apiKey });
   const maxRetries = 3;
   let lastError;
 
@@ -58,12 +56,16 @@ export const analyzeExamImage = async (base64Image: string, mimeType: string): P
               text: `Analyze this image of an exam paper. 
             1. Identify the Subject and Scope.
             2. Extract all multiple-choice questions.
-            3. For each question, extract the text and options.
-            4. SOLVE the question to determine the 'correctAnswer' (A, B, C, or D).
-            5. Provide a detailed 'explanation'.
-            6. CRITICAL: If a question includes a diagram, graph, geometry figure, or illustration, you MUST identify its bounding box coordinates [ymin, xmin, ymax, xmax] normalized to a 0-1000 scale.
+            3. **HANDLE QUESTION GROUPS (Reading Comprehension / Data Sets):**
+               - If multiple questions share the same context (e.g., "Read the following passage and answer questions 1-3"), you MUST group them.
+               - Assign the SAME 'groupId' to all questions in that set.
+               - Extract the shared text (passage, conversation, table data) into the 'groupContent' field for *every* question in that group.
+            4. For each question, extract the text and options.
+            5. SOLVE the question to determine the 'correctAnswer' (A, B, C, or D).
+            6. Provide a detailed 'explanation'.
+            7. CRITICAL: If a question includes a diagram, graph, geometry figure, or illustration, you MUST identify its bounding box coordinates [ymin, xmin, ymax, xmax] normalized to a 0-1000 scale.
             
-            IMPORTANT: Return the 'explanation', 'subject', and 'scope' in Traditional Chinese (繁體中文), even if the exam is in English.
+            IMPORTANT: Return the 'explanation', 'subject', 'scope', and 'groupContent' in Traditional Chinese (繁體中文), even if the exam is in English.
             Return the result in JSON format matching the schema.`
             },
           ],
@@ -84,7 +86,7 @@ export const analyzeExamImage = async (base64Image: string, mimeType: string): P
     } catch (error: any) {
       console.warn(`Gemini Analysis Attempt ${attempt} failed:`, error);
       lastError = error;
-
+      
       // If it's the last attempt, don't wait, just let it throw in the final block
       if (attempt < maxRetries) {
         // Exponential backoff: 1000ms, 2000ms, 4000ms

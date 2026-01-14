@@ -97,6 +97,9 @@ function handleUpload(ss, data) {
   var sheet = ss.getSheetByName("科目");
   if (!sheet) return createResponse({ status: 'error', message: '找不到 [科目] 工作表' });
   
+  // 檢查表頭，若舊版 Sheet 沒有這些欄位，建議手動或自動補上 (這裡省略自動補表頭，直接寫入)
+  // 欄位順序: ID, Subject, Scope, QNum, Text, A, B, C, D, Ans, Exp, ImgUrl, GroupId, GroupContent
+  
   // 建立或取得存放圖片的資料夾
   var folderName = "ExamAI_Images";
   var folders = DriveApp.getFoldersByName(folderName);
@@ -138,7 +141,9 @@ function handleUpload(ss, data) {
       q.optionD,
       q.correctAnswer,
       q.explanation,
-      imageUrl // 新增第 12 欄 (Index 11) 存放圖片網址
+      imageUrl, // Index 11
+      q.groupId || "", // Index 12: Group ID
+      q.groupContent || "" // Index 13: Group Content
     ]);
   }
   
@@ -182,7 +187,9 @@ function handleGetQuestions(ss, subject, scope) {
         optionD: row[8],
         correctAnswer: row[9],
         explanation: row[10],
-        diagramUrl: row[11] || "" // 讀取第 12 欄的圖片網址
+        diagramUrl: row[11] || "", 
+        groupId: row[12] || "",      // 讀取 Index 12
+        groupContent: row[13] || ""  // 讀取 Index 13
       });
     }
   }

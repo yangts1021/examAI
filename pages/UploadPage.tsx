@@ -333,7 +333,21 @@ const UploadPage: React.FC = () => {
                     )}
 
                     <div className="mb-2">
-                      <label className="block text-xs font-bold uppercase text-slate-500">第 {q.questionNumber || idx + 1} 題</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="text-xs font-bold uppercase text-slate-500">第 {q.questionNumber || idx + 1} 題</label>
+                        {/* 顯示題組 ID 輸入欄 */}
+                         <div className="flex items-center gap-1">
+                            <label className="text-xs text-slate-400">Group ID:</label>
+                            <input 
+                              type="text" 
+                              value={q.groupId || ''}
+                              placeholder="無"
+                              onChange={(e) => handleQuestionChange(idx, 'groupId', e.target.value)}
+                              className="w-16 text-xs p-1 border border-slate-200 rounded text-slate-600 bg-white"
+                            />
+                         </div>
+                      </div>
+                      
                       <textarea 
                         value={q.text}
                         onChange={(e) => handleQuestionChange(idx, 'text', e.target.value)}
@@ -341,6 +355,26 @@ const UploadPage: React.FC = () => {
                         rows={2}
                       />
                     </div>
+
+                    {/* 題組文章編輯區塊 */}
+                    <div className="mb-3">
+                       <details className="group/details">
+                          <summary className="text-xs font-semibold text-slate-500 cursor-pointer hover:text-blue-600 select-none flex items-center gap-1">
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4 transition-transform group-open/details:rotate-90">
+                               <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                             </svg>
+                             閱讀測驗 / 題組文章內容 (Group Content) {q.groupContent ? '✅' : ''}
+                          </summary>
+                          <textarea 
+                             value={q.groupContent || ''}
+                             onChange={(e) => handleQuestionChange(idx, 'groupContent', e.target.value)}
+                             className="w-full mt-2 rounded border-slate-300 text-xs p-2 bg-slate-50 text-slate-800 focus:ring-blue-500 focus:border-blue-500"
+                             rows={4}
+                             placeholder="若此題為閱讀測驗的一部分，請在此貼上文章內容。同一題組的題目應有相同的 Group ID 與文章內容。"
+                          />
+                       </details>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-2 mb-2">
                       {['A', 'B', 'C', 'D'].map((opt) => (
                         <div key={opt}>

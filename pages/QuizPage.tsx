@@ -14,7 +14,6 @@ const QuizPage: React.FC = () => {
   const [availableScopes, setAvailableScopes] = useState<string[]>([]);
   const [isScopesLoading, setIsScopesLoading] = useState(false);
   
-  // 新增：題目數量設定，預設 5 題
   const [questionCount, setQuestionCount] = useState<number>(5);
 
   const [questions, setQuestions] = useState<Question[]>([]);
@@ -84,18 +83,45 @@ const QuizPage: React.FC = () => {
         return;
       }
       
-      // 洗牌
-      const shuffled = [...q].sort(() => 0.5 - Math.random());
+      // --- Group-based Shuffling Logic Start ---
+      const groups: Record<string, Question[]> = {};
       
-      // 根據選擇的數量擷取題目 (若選全部則使用極大值)
-      const limit = questionCount === -1 ? shuffled.length : questionCount;
-      const selectedQuestions = shuffled.slice(0, limit);
+      // 1. Group questions
+      q.forEach(question => {
+        // Use groupId if available, otherwise create a unique key for single questions
+        const key = question.groupId ? question.groupId : `single-${question.id || Math.random()}`;
+        if (!groups[key]) {
+          groups[key] = [];
+        }
+        groups[key].push(question);
+      });
 
-      // 如果實際題目少於要求數量，顯示提示 (非錯誤)
-      if (questionCount !== -1 && selectedQuestions.length < questionCount) {
-         // 選擇性提示，或者直接開始
-         // alert(`注意：資料庫中目前只有 ${selectedQuestions.length} 題符合條件，將全部列出。`);
+      // 2. Shuffle the group keys
+      const groupKeys = Object.keys(groups).sort(() => 0.5 - Math.random());
+
+      // 3. Reconstruct the list, respecting the limit
+      let selectedQuestions: Question[] = [];
+      const limit = questionCount === -1 ? q.length : questionCount;
+
+      for (const key of groupKeys) {
+        if (selectedQuestions.length >= limit) break;
+        
+        // Ensure questions within a group are sorted by question number (if available) to maintain logical order
+        const groupQuestions = groups[key].sort((a, b) => (a.questionNumber || 0) - (b.questionNumber || 0));
+        
+        selectedQuestions.push(...groupQuestions);
       }
+      
+      // Note: This might slightly exceed 'limit' if the last group added has multiple questions.
+      // We can choose to slice strictly or allow a slight overflow to keep groups intact.
+      // For user experience, keeping groups intact is better, but to be strict:
+      // selectedQuestions = selectedQuestions.slice(0, limit); 
+      // Let's stick to the limit to avoid confusion with the score denominator.
+      if (selectedQuestions.length > limit) {
+         selectedQuestions = selectedQuestions.slice(0, limit);
+      }
+
+      // --- Group-based Shuffling Logic End ---
 
       setQuestions(selectedQuestions);
       setStep('quiz');
@@ -256,52 +282,75 @@ const QuizPage: React.FC = () => {
           </span>
         </div>
         
-        {questions.map((q, idx) => (
-          <div key={idx} className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-            <h3 className="font-semibold text-lg text-slate-900 mb-4">
-              <span className="text-slate-400 mr-2">{idx + 1}.</span>
-              {q.text}
-            </h3>
-            
-            {/* 顯示題目配圖 (如果有) */}
-            {q.diagramUrl && (
-              <div className="mb-6 flex justify-center bg-slate-50 p-4 rounded-lg border border-slate-100">
-                <img 
-                  src={q.diagramUrl} 
-                  alt={`Diagram for Question ${q.questionNumber || idx + 1}`} 
-                  className="max-h-64 max-w-full object-contain rounded"
-                />
-              </div>
-            )}
+        {questions.map((q, idx) => {
+          // Check if we need to display the group passage
+          // Display if: It has groupContent AND (it's the first question OR the previous question's groupId is different)
+          const showPassage = q.groupContent && (idx === 0 || questions[idx - 1].groupId !== q.groupId);
 
-            <div className="space-y-2">
-              {['A', 'B', 'C', 'D'].map((opt) => (
-                <label 
-                  key={opt} 
-                  className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
-                    answers[idx] === opt 
-                      ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' 
-                      : 'border-slate-200 hover:bg-slate-50'
-                  }`}
-                >
-                  <input 
-                    type="radio" 
-                    name={`q-${idx}`} 
-                    value={opt} 
-                    checked={answers[idx] === opt}
-                    onChange={() => handleAnswerSelect(idx, opt)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
-                  />
-                  <span className="ml-3 text-slate-700">
-                    <span className="font-bold mr-2">{opt}.</span>
-                    {/* @ts-ignore */}
-                    {q[`option${opt}`]}
-                  </span>
-                </label>
-              ))}
+          return (
+            <div key={idx} className="space-y-4">
+              {/* Reading Passage Block */}
+              {showPassage && (
+                <div className="bg-orange-50 p-6 rounded-xl border-l-4 border-orange-400 shadow-sm animate-fade-in">
+                  <h3 className="font-bold text-orange-800 mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a.75.75 0 000 1.5h.253a.25.25 0 01.244.304l-.459 2.066A1.75 1.75 0 0010.747 15H11a.75.75 0 000-1.5h-.253a.25.25 0 01-.244-.304l.459-2.066A1.75 1.75 0 009.253 9H9z" clipRule="evenodd" />
+                    </svg>
+                    閱讀題組 / Reading Passage
+                  </h3>
+                  <div className="text-slate-800 whitespace-pre-wrap leading-relaxed text-sm">
+                    {q.groupContent}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+                <h3 className="font-semibold text-lg text-slate-900 mb-4">
+                  <span className="text-slate-400 mr-2">{idx + 1}.</span>
+                  {q.text}
+                </h3>
+                
+                {/* 顯示題目配圖 (如果有) */}
+                {q.diagramUrl && (
+                  <div className="mb-6 flex justify-center bg-slate-50 p-4 rounded-lg border border-slate-100">
+                    <img 
+                      src={q.diagramUrl} 
+                      alt={`Diagram for Question ${q.questionNumber || idx + 1}`} 
+                      className="max-h-64 max-w-full object-contain rounded"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  {['A', 'B', 'C', 'D'].map((opt) => (
+                    <label 
+                      key={opt} 
+                      className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
+                        answers[idx] === opt 
+                          ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500' 
+                          : 'border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input 
+                        type="radio" 
+                        name={`q-${idx}`} 
+                        value={opt} 
+                        checked={answers[idx] === opt}
+                        onChange={() => handleAnswerSelect(idx, opt)}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      />
+                      <span className="ml-3 text-slate-700">
+                        <span className="font-bold mr-2">{opt}.</span>
+                        {/* @ts-ignore */}
+                        {q[`option${opt}`]}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div className="flex justify-end pt-6">
           <Button 
@@ -333,37 +382,48 @@ const QuizPage: React.FC = () => {
       <div className="space-y-6">
         {questions.map((q, idx) => {
           const res = results[idx];
-          return (
-            <div key={idx} className={`p-6 rounded-xl border ${res.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
-               <div className="flex justify-between items-start mb-2">
-                 <h3 className="font-semibold text-slate-900">{q.text}</h3>
-                 <span className={`text-sm font-bold ${res.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
-                   {res.isCorrect ? '答對' : '答錯'}
-                 </span>
-               </div>
-               
-               {/* 結果頁也要顯示圖片 */}
-               {q.diagramUrl && (
-                  <div className="my-3 flex justify-start">
-                    <img 
-                      src={q.diagramUrl} 
-                      alt="Question Diagram" 
-                      className="max-h-40 max-w-full object-contain rounded border border-slate-300 p-1 bg-white"
-                    />
-                  </div>
-                )}
+          // Result page also needs to show the passage context for clarity
+          const showPassage = q.groupContent && (idx === 0 || questions[idx - 1].groupId !== q.groupId);
 
-               <div className="text-sm text-slate-600 mb-2">
-                 你的答案： <span className="font-medium">{res.selectedAnswer}</span>
-               </div>
-               {!res.isCorrect && (
-                 <div className="text-sm text-green-700 font-medium mb-2">
-                   正確答案： {q.correctAnswer}
+          return (
+            <div key={idx} className="space-y-4">
+              {showPassage && (
+                <div className="bg-slate-100 p-4 rounded-lg border-l-4 border-slate-400 text-sm text-slate-600">
+                   <p className="font-bold mb-1">[閱讀題組文章]</p>
+                   {q.groupContent}
+                </div>
+              )}
+              
+              <div className={`p-6 rounded-xl border ${res.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
+                 <div className="flex justify-between items-start mb-2">
+                   <h3 className="font-semibold text-slate-900">{q.text}</h3>
+                   <span className={`text-sm font-bold ${res.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
+                     {res.isCorrect ? '答對' : '答錯'}
+                   </span>
                  </div>
-               )}
-               <div className="mt-4 p-3 bg-white/60 rounded-lg text-sm text-slate-700">
-                 <span className="font-bold">詳解： </span>{q.explanation}
-               </div>
+                 
+                 {q.diagramUrl && (
+                    <div className="my-3 flex justify-start">
+                      <img 
+                        src={q.diagramUrl} 
+                        alt="Question Diagram" 
+                        className="max-h-40 max-w-full object-contain rounded border border-slate-300 p-1 bg-white"
+                      />
+                    </div>
+                  )}
+
+                 <div className="text-sm text-slate-600 mb-2">
+                   你的答案： <span className="font-medium">{res.selectedAnswer}</span>
+                 </div>
+                 {!res.isCorrect && (
+                   <div className="text-sm text-green-700 font-medium mb-2">
+                     正確答案： {q.correctAnswer}
+                   </div>
+                 )}
+                 <div className="mt-4 p-3 bg-white/60 rounded-lg text-sm text-slate-700">
+                   <span className="font-bold">詳解： </span>{q.explanation}
+                 </div>
+              </div>
             </div>
           )
         })}
