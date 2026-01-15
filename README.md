@@ -42,6 +42,18 @@ npm run build
 2. 在 **Build and deployment** 下，選擇 Source 為 **GitHub Actions**
 3. 推送程式碼後，Action 會自動執行。
 
+### 本地生產環境模擬 (Production Preview)
+若您想在區域網路長期架設網頁，建議使用生產環境建置：
+
+```bash
+# 1. 建置專案
+npm run build
+
+# 2. 預覽 (啟動一個輕量 Web Server)
+npm run preview
+```
+`npm run preview` 也會開啟 Port 4173 (預設)，您同樣可以透過 `http://<IP>:4173` 在內網存取。這比 `npm run dev` 更接近真實上線後的效能。
+
 ## 前往新電腦開發 (Switching to a New Machine)
 若要更換電腦繼續開發，請遵循以下步驟：
 
