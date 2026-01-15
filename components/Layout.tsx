@@ -20,23 +20,29 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
             <h1 className="text-xl font-bold text-slate-800">ExamAI 考題大師</h1>
           </div>
           <nav className="flex space-x-4">
-            <button 
+            <button
               onClick={() => onNavigate('home')}
               className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'home' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
             >
               首頁
             </button>
-            <button 
+            <button
               onClick={() => onNavigate('upload')}
               className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'upload' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
             >
               上傳試卷
             </button>
-            <button 
+            <button
               onClick={() => onNavigate('quiz')}
               className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'quiz' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
             >
               開始測驗
+            </button>
+            <button
+              onClick={() => onNavigate('history')}
+              className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'history' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
+            >
+              歷史紀錄
             </button>
           </nav>
         </div>

@@ -35,12 +35,54 @@ function doGet(e) {
     return handleGetScopes(ss, e.parameter.subject);
   } else if (action === 'getSubjects') {
     return handleGetSubjects(ss);
+  } else if (action === 'getHistory') {
+    return handleGetHistory(ss);
   }
 
   return createResponse({ status: 'error', message: 'Unknown GET action' });
 }
 
-// 優化：從 [分類索引] 工作表讀取，速度快很多
+// ... existing code ...
+
+function handleGetHistory(ss) {
+  var sheet = ss.getSheetByName("紀錄");
+  if (!sheet) return createResponse({ status: 'error', message: '找不到 [紀錄] 工作表' });
+
+  var data = sheet.getDataRange().getValues();
+  var history = [];
+
+  // Skip header (row 0)
+  for (var i = 1; i < data.length; i++) {
+    var row = data[i];
+    // Check if row has valid timestamp and subject
+    if (row[0] && row[1]) {
+      try {
+        var results = JSON.parse(row[4]); // Parse JSON from Column E
+        history.push({
+          timestamp: row[0],
+          subject: row[1],
+          scope: row[2],
+          score: row[3],
+          results: results
+        });
+      } catch (e) {
+        // Silently fail for bad JSON row
+      }
+    }
+  }
+
+  // Sort by timestamp descending (newest first)
+  history.sort(function (a, b) {
+    return new Date(b.timestamp) - new Date(a.timestamp);
+  });
+
+  return createResponse({ status: 'success', history: history });
+}
+
+function createResponse(data) {
+  return ContentService.createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 function handleGetSubjects(ss) {
   var sheet = getOrInitMetadataSheet(ss);
   var data = sheet.getDataRange().getValues();

@@ -5,9 +5,12 @@ import HomePage from './pages/HomePage';
 import UploadPage from './pages/UploadPage';
 import QuizPage from './pages/QuizPage';
 
+import HistoryPage from './pages/HistoryPage';
+
 // Simple Hash Router Implementation
 const App: React.FC = () => {
   const [route, setRoute] = useState<AppRoute>(AppRoute.HOME);
+  const [pageState, setPageState] = useState<any>(null);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -26,7 +29,12 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  const navigate = (newRoute: string) => {
+  const navigate = (newRoute: string, state?: any) => {
+    if (state) {
+      setPageState(state);
+    } else {
+      setPageState(null);
+    }
     window.location.hash = newRoute;
   };
 
@@ -35,7 +43,9 @@ const App: React.FC = () => {
       case AppRoute.UPLOAD:
         return <UploadPage />;
       case AppRoute.QUIZ:
-        return <QuizPage />;
+        return <QuizPage initialQuestions={pageState?.reviewQuestions} />;
+      case AppRoute.HISTORY:
+        return <HistoryPage onNavigate={navigate} />;
       case AppRoute.HOME:
       default:
         return <HomePage onNavigate={(r) => navigate(r)} />;

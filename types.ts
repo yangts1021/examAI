@@ -10,7 +10,7 @@ export interface Question {
   correctAnswer: string; // 'A', 'B', 'C', or 'D'
   explanation: string;
   // 新增：圖片座標 [ymin, xmin, ymax, xmax] (0-1000 scale)
-  diagramCoordinates?: number[]; 
+  diagramCoordinates?: number[];
   // 新增：前端裁切後的圖片 Base64
   diagramUrl?: string;
   // 新增：題組 ID (用於識別多題共用同一文章)
@@ -42,4 +42,5 @@ export enum AppRoute {
   HOME = 'home',
   UPLOAD = 'upload',
   QUIZ = 'quiz',
+  HISTORY = 'history',
 }

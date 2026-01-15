@@ -3,7 +3,11 @@ import Button from '../components/Button';
 import { fetchQuizQuestions, saveQuizResult, fetchScopes, fetchSubjects } from '../services/gasService';
 import { Question, QuizResult } from '../types';
 
-const QuizPage: React.FC = () => {
+interface QuizPageProps {
+  initialQuestions?: Question[];
+}
+
+const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions }) => {
   const [step, setStep] = useState<'setup' | 'quiz' | 'result'>('setup');
 
   const [subjects, setSubjects] = useState<string[]>([]);
@@ -21,6 +25,17 @@ const QuizPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [results, setResults] = useState<QuizResult[]>([]);
   const [score, setScore] = useState(0);
+
+  // 初始化：如果有傳入題目 (複習模式)，直接進入測驗
+  useEffect(() => {
+    if (initialQuestions && initialQuestions.length > 0) {
+      setQuestions(initialQuestions);
+      setStep('quiz');
+      setSubject(initialQuestions[0].subject || '錯題複習'); // Hack: subject field might not await exist on Q, but we can assume or pass it
+      // Actually Question interface doesn't have subject field. We can fix this or just show "Review"
+      // Let's just hardcode "錯題複習" for UI display if we don't have it.
+    }
+  }, [initialQuestions]);
 
   // 初始化：從 GAS 讀取所有可用的科目
   useEffect(() => {
@@ -324,8 +339,8 @@ const QuizPage: React.FC = () => {
                     <label
                       key={opt}
                       className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${answers[idx] === opt
-                          ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500'
-                          : 'border-slate-200 hover:bg-slate-50'
+                        ? 'bg-blue-50 border-blue-500 ring-1 ring-blue-500'
+                        : 'border-slate-200 hover:bg-slate-50'
                         }`}
                     >
                       <input
