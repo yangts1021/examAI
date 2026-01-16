@@ -18,7 +18,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
         {/* Upload Card */}
         <div className="bg-white overflow-hidden shadow-lg rounded-2xl border border-slate-200 hover:shadow-xl transition-shadow duration-300">
           <div className="p-8 flex flex-col h-full">
@@ -51,6 +51,24 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             </p>
             <Button variant="secondary" onClick={() => onNavigate(AppRoute.QUIZ)} className="w-full">
               開始測驗
+            </Button>
+          </div>
+        </div>
+
+        {/* History Card */}
+        <div className="bg-white overflow-hidden shadow-lg rounded-2xl border border-slate-200 hover:shadow-xl transition-shadow duration-300">
+          <div className="p-8 flex flex-col h-full">
+            <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-6 text-amber-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">歷史紀錄</h3>
+            <p className="text-slate-500 mb-8 flex-grow">
+              查看詳細的過往測驗成績與答題狀況，並針對此範圍的錯題進行重點複習。
+            </p>
+            <Button variant="outline" onClick={() => onNavigate(AppRoute.HISTORY)} className="w-full">
+              查看紀錄
             </Button>
           </div>
         </div>
