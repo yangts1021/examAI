@@ -5,9 +5,11 @@ import { Question, QuizResult } from '../types';
 
 interface QuizPageProps {
   initialQuestions?: Question[];
+  initialSubject?: string;
+  initialScope?: string;
 }
 
-const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions }) => {
+const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, initialScope }) => {
   const [step, setStep] = useState<'setup' | 'quiz' | 'result'>('setup');
 
   const [subjects, setSubjects] = useState<string[]>([]);
@@ -31,11 +33,17 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions }) => {
     if (initialQuestions && initialQuestions.length > 0) {
       setQuestions(initialQuestions);
       setStep('quiz');
-      setSubject(initialQuestions[0].subject || '錯題複習'); // Hack: subject field might not await exist on Q, but we can assume or pass it
-      // Actually Question interface doesn't have subject field. We can fix this or just show "Review"
-      // Let's just hardcode "錯題複習" for UI display if we don't have it.
+      // Set subject and scope from props if available, otherwise fallback
+      if (initialSubject) setSubject(initialSubject);
+      if (initialScope) setScope(initialScope);
+
+      // If subject is missing (legacy), try to fallback to a string, though it's better to rely on prop
+      if (!initialSubject) {
+        // @ts-ignore
+        setSubject(initialQuestions[0].subject || '錯題複習');
+      }
     }
-  }, [initialQuestions]);
+  }, [initialQuestions, initialSubject, initialScope]);
 
   // 初始化：從 GAS 讀取所有可用的科目
   useEffect(() => {

@@ -43,7 +43,11 @@ const App: React.FC = () => {
       case AppRoute.UPLOAD:
         return <UploadPage />;
       case AppRoute.QUIZ:
-        return <QuizPage initialQuestions={pageState?.reviewQuestions} />;
+        return <QuizPage
+          initialQuestions={pageState?.reviewQuestions}
+          initialSubject={pageState?.subject}
+          initialScope={pageState?.scope}
+        />;
       case AppRoute.HISTORY:
         return <HistoryPage onNavigate={navigate} />;
       case AppRoute.HOME:

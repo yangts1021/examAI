@@ -68,7 +68,11 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ onNavigate }) => {
         // We need to pass data to QuizPage. 
         // Since we are using simple state routing in App.tsx, we need to pass this via the onNavigate param.
         // We assume App.tsx's navigate function handles a second 'state' argument or we need to Modify App.tsx.
-        onNavigate('quiz', { reviewQuestions });
+        onNavigate('quiz', {
+            reviewQuestions,
+            subject: record.subject,
+            scope: record.scope
+        });
         setReviewingId(null);
     };
 
