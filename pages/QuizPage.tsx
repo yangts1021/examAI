@@ -47,6 +47,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
 
   // 初始化：從 GAS 讀取所有可用的科目
   useEffect(() => {
+    // 如果是複習模式 (已經有題目)，不要重新讀取科目，以免覆蓋 subject
+    if (initialQuestions && initialQuestions.length > 0) {
+      return;
+    }
+
     const loadSubjects = async () => {
       setIsSubjectsLoading(true);
       try {
@@ -63,10 +68,15 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
     };
 
     loadSubjects();
-  }, []);
+  }, [initialQuestions]);
 
   // 當科目改變時，抓取對應的範圍列表
   useEffect(() => {
+    // 如果是複習模式，不要自動讀取範圍以免覆蓋 scope
+    if (initialQuestions && initialQuestions.length > 0) {
+      return;
+    }
+
     if (!subject) {
       setAvailableScopes([]);
       setScope('');
@@ -91,7 +101,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
     };
 
     loadScopes();
-  }, [subject]);
+  }, [subject, initialQuestions]);
 
   const startQuiz = async () => {
     if (!scope.trim()) {
