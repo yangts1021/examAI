@@ -1,12 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
 import { AppRoute } from '../types';
+import { getGasUrl, setGasUrl } from '../services/gasService';
 
 interface HomePageProps {
   onNavigate: (page: AppRoute) => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
+  const [gasUrl, setGasUrlState] = useState('');
+
+  useEffect(() => {
+    setGasUrlState(getGasUrl());
+  }, []);
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newUrl = e.target.value;
+    setGasUrlState(newUrl);
+    setGasUrl(newUrl);
+  };
+
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-12">
       <div className="text-center space-y-4 max-w-2xl">
@@ -15,6 +28,26 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         </h2>
         <p className="text-xl text-slate-600">
           上傳試卷自動數位化，或使用 AI 生成測驗自我挑戰。
+        </p>
+      </div>
+
+      {/* GAS URL Configuration */}
+      <div className="w-full max-w-2xl bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        <label htmlFor="gas-url" className="block text-sm font-medium text-slate-700 mb-2">
+          Google Apps Script URL (資料庫連結)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            id="gas-url"
+            value={gasUrl}
+            onChange={handleUrlChange}
+            placeholder="請貼上您的 GAS 網頁應用程式網址..."
+            className="flex-1 rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 text-sm p-2.5"
+          />
+        </div>
+        <p className="text-xs text-slate-500 mt-2">
+          請貼上部署為「網頁應用程式」後的網址 (以 <code>/exec</code> 結尾)。
         </p>
       </div>
 

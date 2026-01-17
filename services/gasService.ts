@@ -1,20 +1,34 @@
-import { GOOGLE_APP_SCRIPT_URL } from "../constants";
 import { ExamPaperData, QuizSubmission, Question } from "../types";
+
+const GAS_URL_KEY = 'examai_gas_url';
+
+export const getGasUrl = (): string => {
+  return localStorage.getItem(GAS_URL_KEY) || '';
+};
+
+export const setGasUrl = (url: string): void => {
+  localStorage.setItem(GAS_URL_KEY, url.trim());
+};
 
 /* 
   Google Apps Script (GAS) 整合服務
-  
-  嚴格模式：必須設定 GOOGLE_APP_SCRIPT_URL 才能運作。
 */
 
-export const uploadExamData = async (data: ExamPaperData): Promise<boolean> => {
-  if (!GOOGLE_APP_SCRIPT_URL) {
-    alert("錯誤：尚未設定資料庫連結！\n\n請開啟專案中的 `constants.ts` 檔案，並將您的 Google Apps Script 網頁應用程式網址貼上。");
-    return false;
+const checkUrl = (): string | null => {
+  const url = getGasUrl();
+  if (!url) {
+    alert("請先在首頁設定 Google Apps Script (GAS) 網址！");
+    return null;
   }
+  return url;
+};
+
+export const uploadExamData = async (data: ExamPaperData): Promise<boolean> => {
+  const url = checkUrl();
+  if (!url) return false;
 
   try {
-    const response = await fetch(GOOGLE_APP_SCRIPT_URL, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -67,10 +81,8 @@ export const uploadExamData = async (data: ExamPaperData): Promise<boolean> => {
 };
 
 export const fetchQuizQuestions = async (subject: string, scope: string): Promise<Question[]> => {
-  if (!GOOGLE_APP_SCRIPT_URL) {
-    alert("錯誤：尚未設定資料庫連結！\n\n請開啟 `constants.ts` 設定 Google Apps Script 網址以讀取題目。");
-    return [];
-  }
+  const url = checkUrl();
+  if (!url) return [];
 
   try {
     const params = new URLSearchParams({
@@ -79,13 +91,11 @@ export const fetchQuizQuestions = async (subject: string, scope: string): Promis
       scope: scope
     });
 
-    const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?${params.toString()}`);
+    const response = await fetch(`${url}?${params.toString()}`);
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
       console.error("GAS returned non-JSON response for questions.");
-      // alert("讀取失敗：資料庫回傳格式錯誤 (可能是權限問題，請檢查 GAS 部署)。");
-      // 這裡可以選擇不跳 alert，以免影響使用者體驗，僅 console error
       return [];
     }
 
@@ -105,16 +115,15 @@ export const fetchQuizQuestions = async (subject: string, scope: string): Promis
 };
 
 export const fetchSubjects = async (): Promise<string[]> => {
-  if (!GOOGLE_APP_SCRIPT_URL) {
-    return [];
-  }
+  const url = getGasUrl(); // Don't alert on home page load if missing
+  if (!url) return [];
 
   try {
     const params = new URLSearchParams({
       action: 'getSubjects'
     });
 
-    const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?${params.toString()}`);
+    const response = await fetch(`${url}?${params.toString()}`);
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
@@ -136,9 +145,8 @@ export const fetchSubjects = async (): Promise<string[]> => {
 };
 
 export const fetchScopes = async (subject: string): Promise<string[]> => {
-  if (!GOOGLE_APP_SCRIPT_URL) {
-    return [];
-  }
+  const url = checkUrl();
+  if (!url) return [];
 
   try {
     const params = new URLSearchParams({
@@ -146,7 +154,7 @@ export const fetchScopes = async (subject: string): Promise<string[]> => {
       subject: subject
     });
 
-    const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?${params.toString()}`);
+    const response = await fetch(`${url}?${params.toString()}`);
 
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {
@@ -168,13 +176,11 @@ export const fetchScopes = async (subject: string): Promise<string[]> => {
 };
 
 export const saveQuizResult = async (submission: QuizSubmission): Promise<boolean> => {
-  if (!GOOGLE_APP_SCRIPT_URL) {
-    alert("錯誤：無法儲存測驗結果 (未設定資料庫連結)。");
-    return false;
-  }
+  const url = checkUrl();
+  if (!url) return false;
 
   try {
-    await fetch(GOOGLE_APP_SCRIPT_URL, {
+    await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -198,16 +204,15 @@ export interface HistoryRecord {
 }
 
 export const fetchQuizHistory = async (): Promise<HistoryRecord[]> => {
-  if (!GOOGLE_APP_SCRIPT_URL) {
-    return [];
-  }
+  const url = getGasUrl();
+  if (!url) return [];
 
   try {
     const params = new URLSearchParams({
       action: 'getHistory'
     });
 
-    const response = await fetch(`${GOOGLE_APP_SCRIPT_URL}?${params.toString()}`);
+    const response = await fetch(`${url}?${params.toString()}`);
     // Check if response is JSON
     const contentType = response.headers.get("content-type");
     if (!contentType || !contentType.includes("application/json")) {

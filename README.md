@@ -78,6 +78,10 @@ npm run preview
    # 編輯 .env.local 填入密鑰
    ```
 
+4. **設定 Google Apps Script (GAS) 網址**
+   - 啟動網頁後，在首頁上方的輸入框貼上您的 GAS 網頁應用程式網址 (`https://script.google.com/.../exec`)。
+   - 系統會自動儲存設定。
+
 4. **啟動開發伺服器**
    ```bash
    npm run dev
