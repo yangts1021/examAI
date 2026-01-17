@@ -15,9 +15,12 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   }, []);
 
   const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newUrl = e.target.value;
-    setGasUrlState(newUrl);
-    setGasUrl(newUrl);
+    setGasUrlState(e.target.value);
+  };
+
+  const handleSaveUrl = () => {
+    setGasUrl(gasUrl);
+    alert('GAS 網址已儲存！');
   };
 
   return (
@@ -45,6 +48,9 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             placeholder="請貼上您的 GAS 網頁應用程式網址..."
             className="flex-1 rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 text-sm p-2.5"
           />
+          <Button onClick={handleSaveUrl} size="sm">
+            儲存
+          </Button>
         </div>
         <p className="text-xs text-slate-500 mt-2">
           請貼上部署為「網頁應用程式」後的網址 (以 <code>/exec</code> 結尾)。
