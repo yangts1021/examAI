@@ -17,11 +17,44 @@ const fetchGas = async (url: string) => {
 };
 
 export const offlineService = {
+    // Upload pending offline results to GAS
+    uploadPendingResults: async (onProgress?: (msg: string) => void) => {
+        const pending = await db.history.filter(h => h.synced === false && !!h.submissionData).toArray();
+        if (pending.length === 0) return;
+
+        if (onProgress) onProgress(`正在上傳 ${pending.length} 筆離線測驗紀錄...`);
+        const url = getGasUrl();
+        if (!url) return;
+
+        for (const record of pending) {
+            try {
+                // Use the standard saveResult endpoint
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({
+                        action: 'saveResult',
+                        data: record.submissionData
+                    })
+                });
+
+                // Mark as synced
+                await db.history.update(record.id!, { synced: true });
+            } catch (e) {
+                console.error("Failed to upload offline result", e);
+                // Continue to next record, don't block
+            }
+        }
+    },
+
     // Sync all data from GAS to Local IndexedDB
     syncData: async (onProgress?: (msg: string) => void) => {
         try {
             const url = getGasUrl();
             if (!url) throw new Error("GAS URL not configured");
+
+            // 0. Upload Pending Results First
+            await offlineService.uploadPendingResults(onProgress);
 
             // 1. Fetch Subjects
             if (onProgress) onProgress("正在讀取科目列表...");
@@ -83,33 +116,67 @@ export const offlineService = {
                 await db.questions.bulkAdd(allQuestions);
             });
 
-            // 3. Process Images
+            // 4. Fetch History
+            if (onProgress) onProgress("正在下載歷史紀錄...");
+            const historyUrl = `${url}?action=getHistory`;
+            try {
+                const histRes = await fetch(historyUrl);
+                const histJson = await histRes.json();
+
+                if (histJson.status === 'success' && Array.isArray(histJson.history)) {
+                    const historyRecords = histJson.history.map((h: any) => {
+                        // Parse score string "5 / 10" or "80"
+                        let score = 0;
+                        let total = 0;
+                        if (typeof h.score === 'string' && h.score.includes('/')) {
+                            const parts = h.score.split('/');
+                            score = parseInt(parts[0].trim()) || 0;
+                            total = parseInt(parts[1].trim()) || 0;
+                        } else {
+                            score = parseInt(h.score) || 0;
+                            total = h.results?.length || 0; // Fallback
+                        }
+
+                        return {
+                            date: h.timestamp,
+                            score,
+                            totalQuestions: total,
+                            subject: h.subject,
+                            scope: h.scope,
+                            mistakes: total - score,
+                            timestamp: new Date(h.timestamp).getTime() || Date.now()
+                        };
+                    });
+
+                    await db.transaction('rw', db.history, async () => {
+                        // Identify unsynced items
+                        const unsynced = await db.history.filter(h => h.synced === false).toArray();
+
+                        await db.history.clear();
+                        await db.history.bulkAdd([...historyRecords, ...unsynced]);
+                    });
+                }
+            } catch (e) {
+                console.warn("Failed to sync history", e);
+            }
+
+            // 5. Process Images
             if (onProgress) onProgress("正在分析並下載圖片...");
             const imageUrls = new Set<string>();
 
-            // Extract URLs from question text/options (simple regex or field check)
-            // Assuming images might be in 'question' text or specifically in 'image' field if it existed.
-            // Based on prior context, images are likely embedded or just links.
-            // But user mentioned "Question bank has many images".
-            // Let's assume there is an image field or we parse markdown/html for <img> tags.
-
-            // If the Question type has an 'image' field:
+            // Extract URLs from question text/options
             allQuestions.forEach(q => {
-                // Check for explicit image field if it exists
                 if (q.diagramUrl && q.diagramUrl.startsWith('http')) imageUrls.add(q.diagramUrl);
 
-                // Check for markdown images in text: ![alt](url)
                 const mdRegex = /!\[.*?\]\((.*?)\)/g;
                 let match;
                 while ((match = mdRegex.exec(q.text)) !== null) {
                     imageUrls.add(match[1]);
                 }
 
-                // Check explicit option fields
                 const optionFields = [q.optionA, q.optionB, q.optionC, q.optionD];
                 optionFields.forEach(opt => {
                     if (opt) {
-                        // reset regex lastIndex for new string
                         mdRegex.lastIndex = 0;
                         while ((match = mdRegex.exec(opt)) !== null) imageUrls.add(match[1]);
                     }
@@ -128,8 +195,6 @@ export const offlineService = {
 
             for (const imgUrl of urls) {
                 downloaded++;
-                // Skip if already exists? Or force update?
-                // Let's check existence to save bandwidth
                 const existing = await db.images.get(imgUrl);
                 if (existing) continue;
 
@@ -171,20 +236,29 @@ export const offlineService = {
     // offline fetch
     getQuestions: async (subject: string, scope?: string) => {
         let collection = db.questions.where('subject').equals(subject);
-
-        // Dexie doesn't support multi-field index queries easily without composite index.
-        // We filter in memory for scope if needed.
         const questions = await collection.toArray();
-
         if (scope) {
             return questions.filter(q => q.scope === scope);
         }
         return questions;
     },
 
+    saveOfflineResult: async (submission: any, score: number, total: number) => {
+        await db.history.add({
+            date: new Date().toISOString(),
+            score,
+            totalQuestions: total,
+            subject: submission.subject || 'Unknown',
+            scope: submission.scope || 'Unknown',
+            mistakes: total - score,
+            timestamp: Date.now(),
+            submissionData: submission,
+            synced: false
+        });
+    },
+
     getSubjects: async () => {
         const questions = await db.questions.toArray();
-        // Unique subjects
         const subjects = Array.from(new Set(questions.map(q => q.subject)));
         return subjects;
     },
