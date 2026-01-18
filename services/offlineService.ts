@@ -9,57 +9,68 @@ export const offlineService = {
             const url = getGasUrl();
             if (!url) throw new Error("GAS URL not configured");
 
-            // 1. Fetch Questions
-            if (onProgress) onProgress("正在下載最新的題庫...");
-
-            // We need a way to fetch ALL questions. 
-            // Currently gasService fetches by subject/scope. 
-            // We often need a "dump" API or efficient way. 
-            // For now, we reuse the existing fetch with a special 'all' flag or iterate known subjects?
-            // Actually, looking at gasService, 'getQuestions' takes subject and scope.
-            // To sync EVERYTHING, we might needs to fetch the list of subjects first, then fetch all questions for them.
-
-            // Let's rely on fetching subjects first
+            // 1. Fetch Subjects
             if (onProgress) onProgress("正在讀取科目列表...");
             const subjectsUrl = `${url}?action=getSubjects`;
             const subjectsRes = await fetch(subjectsUrl);
-            const subjectsData = await subjectsRes.json();
 
-            if (!subjectsData.success) throw new Error("Failed to fetch subjects");
-            const subjects = subjectsData.data as string[];
+            if (!subjectsRes.ok) throw new Error(`GAS Network Error: ${subjectsRes.status}`);
+            const subjectsJson = await subjectsRes.json();
+
+            if (subjectsJson.status !== 'success' || !Array.isArray(subjectsJson.subjects)) {
+                throw new Error("Failed to fetch subjects: " + JSON.stringify(subjectsJson));
+            }
+            const subjects = subjectsJson.subjects as string[];
 
             let allQuestions: Question[] = [];
 
-            // Fetch questions for each subject
-            // Optimized: In a real app we might want a bulk export API, but loop is fine for now
+            // 2. Iterate Subjects -> Scopes -> Questions
             for (const subject of subjects) {
-                if (onProgress) onProgress(`正在下載科目：${subject}...`);
-                // For sync, we probably want ALL scopes.
-                // The current API might need adjustment or we loop scopes too.
-                // Simpler approach: Fetch questions by Subject only (ignoring scope to get all?) 
-                // If the GAS script supports optional scope, that's great. 
-                // Assuming we need to iterate scopes too if the backend enforces it.
+                if (onProgress) onProgress(`正在讀取科目 [${subject}] 的範圍...`);
 
-                // Let's simplify: we assume we can fetch by subject.
-                const qUrl = `${url}?action=getQuestions&subject=${encodeURIComponent(subject)}`;
-                // NOTE: If your GAS script requires scope, this might fail or return empty.
-                // We'll try to fetch all for the subject.
+                // Fetch Scopes for this Subject
+                const scopesUrl = `${url}?action=getScopes&subject=${encodeURIComponent(subject)}`;
+                const scopesRes = await fetch(scopesUrl);
+                const scopesJson = await scopesRes.json();
 
-                const qRes = await fetch(qUrl);
-                const qJson = await qRes.json();
-
-                if (qJson.success && Array.isArray(qJson.data)) {
-                    // Enrich with subject if missing
-                    const qs = qJson.data.map((q: any) => ({ ...q, subject }));
-                    allQuestions.push(...qs);
+                if (scopesJson.status !== 'success' || !Array.isArray(scopesJson.scopes)) {
+                    console.warn(`Skipping subject ${subject}: Failed to fetch scopes`, scopesJson);
+                    continue;
                 }
+                const scopes = scopesJson.scopes as string[];
+
+                for (const scope of scopes) {
+                    if (onProgress) onProgress(`下載中: ${subject} - ${scope}...`);
+
+                    const qUrl = `${url}?action=getQuestions&subject=${encodeURIComponent(subject)}&scope=${encodeURIComponent(scope)}`;
+                    const qRes = await fetch(qUrl);
+                    const qJson = await qRes.json();
+
+                    if (qJson.status === 'success' && Array.isArray(qJson.questions)) {
+                        // Enrich with subject & scope to ensure we can query locally later
+                        const qs = qJson.questions.map((q: any) => ({
+                            ...q,
+                            subject,
+                            scope,
+                            // Ensure options is string[] if backend sends optionA/B...
+                            options: q.options || [q.optionA, q.optionB, q.optionC, q.optionD].filter(Boolean)
+                        }));
+                        allQuestions.push(...qs);
+                    } else {
+                        console.warn(`No questions or error for ${subject}-${scope}`, qJson);
+                    }
+                }
+            }
+
+            if (allQuestions.length === 0) {
+                throw new Error("沒有找到任何題目。請確認 GAS 部署權限是否為「所有人」。");
             }
 
             if (onProgress) onProgress(`共找到 ${allQuestions.length} 題，開始儲存...`);
 
-            // 2. Save Questions to DB
+            // 3. Save Questions to DB
             await db.transaction('rw', db.questions, async () => {
-                await db.questions.clear(); // Full sync updates everything
+                await db.questions.clear();
                 await db.questions.bulkAdd(allQuestions);
             });
 
