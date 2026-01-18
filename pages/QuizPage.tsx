@@ -105,15 +105,28 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
   }, [subject, initialQuestions]);
 
   const startQuiz = async () => {
-    if (!scope.trim()) {
+    const isCrossSubject = subject === '🏆 李天豪跨科總複習';
+
+    if (!isCrossSubject && !scope.trim()) {
       alert("請選擇範圍 / 章節。");
       return;
     }
     setIsLoading(true);
     try {
-      const q = await fetchQuizQuestions(subject, scope);
+      let q: Question[] = [];
+      if (isCrossSubject) {
+        // Use offline service for cross-subject
+        // Dynamically import to avoid circular dep issues if any, or just import at top.
+        // Assuming offlineService is imported or available.
+        // We need to import it at top of file. 
+        const { offlineService } = await import('../services/offlineService');
+        q = await offlineService.getCrossSubjectQuestions('李天豪');
+      } else {
+        q = await fetchQuizQuestions(subject, scope);
+      }
+
       if (q.length === 0) {
-        alert("在此科目/範圍找不到題目。");
+        alert(isCrossSubject ? "找不到含有「李天豪」的相關題目 (請先下載離線題庫)。" : "在此科目/範圍找不到題目。");
         return;
       }
 
@@ -189,14 +202,32 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
 
     setIsLoading(true);
     try {
-      await saveQuizResult({
+      const submission = {
         subject,
         scope,
         results: calcResults
-      });
+      };
+
+      // Try online save first
+      const success = await saveQuizResult(submission);
+      if (!success) {
+        throw new Error("Online save failed");
+      }
       setStep('result');
     } catch (e) {
-      alert("測驗已提交，但儲存紀錄失敗。");
+      console.warn("Online save failed, saving locally...", e);
+      try {
+        const { offlineService } = await import('../services/offlineService');
+        await offlineService.saveOfflineResult(
+          { subject, scope, results: calcResults },
+          correctCount,
+          questions.length
+        );
+        alert("網路不穩，測驗結果已先儲存於本機。下次同步時將自動上傳。");
+      } catch (localErr) {
+        console.error("Local save failed", localErr);
+        alert("測驗已提交，但儲存紀錄失敗 (同時無法寫入本機資料庫)。");
+      }
       setStep('result');
     } finally {
       setIsLoading(false);
@@ -234,6 +265,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
                 onChange={(e) => setSubject(e.target.value)}
                 className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
               >
+                <option value="🏆 李天豪跨科總複習">🏆 李天豪跨科總複習</option>
                 {subjects.map(opt => (
                   <option key={opt} value={opt} className="bg-white text-slate-900">{opt}</option>
                 ))}
@@ -245,33 +277,35 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
             )}
           </div>
 
-          {/* 範圍選擇 */}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">範圍 / 章節</label>
-            {isScopesLoading ? (
-              <div className="w-full rounded-lg border border-slate-300 p-2.5 bg-slate-100 text-slate-500 flex items-center">
-                <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                載入範圍中...
-              </div>
-            ) : availableScopes.length > 0 ? (
-              <select
-                value={scope}
-                onChange={(e) => setScope(e.target.value)}
-                className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
-              >
-                {availableScopes.map(s => (
-                  <option key={s} value={s} className="bg-white text-slate-900">{s}</option>
-                ))}
-              </select>
-            ) : (
-              <div className="text-slate-500 text-sm p-2 bg-slate-50 rounded border border-slate-200">
-                {subject ? "此科目目前沒有已儲存的考題範圍。" : "請先選擇科目"}
-              </div>
-            )}
-          </div>
+          {/* 範圍選擇 (當選擇跨科複習時隱藏) */}
+          {subject !== '🏆 李天豪跨科總複習' && (
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">範圍 / 章節</label>
+              {isScopesLoading ? (
+                <div className="w-full rounded-lg border border-slate-300 p-2.5 bg-slate-100 text-slate-500 flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  載入範圍中...
+                </div>
+              ) : availableScopes.length > 0 ? (
+                <select
+                  value={scope}
+                  onChange={(e) => setScope(e.target.value)}
+                  className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
+                >
+                  {availableScopes.map(s => (
+                    <option key={s} value={s} className="bg-white text-slate-900">{s}</option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-slate-500 text-sm p-2 bg-slate-50 rounded border border-slate-200">
+                  {subject ? "此科目目前沒有已儲存的考題範圍。" : "請先選擇科目"}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 題目數量選擇 */}
           <div>
@@ -284,6 +318,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
               <option value={5}>5 題</option>
               <option value={10}>10 題</option>
               <option value={20}>20 題</option>
+              <option value={30}>30 題</option>
               <option value={50}>50 題</option>
               <option value={100}>100 題</option>
               <option value={-1}>全部題目</option>
@@ -295,7 +330,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
             onClick={startQuiz}
             className="w-full mt-4"
             isLoading={isLoading}
-            disabled={isSubjectsLoading || isScopesLoading || subjects.length === 0 || availableScopes.length === 0}
+            disabled={isSubjectsLoading || subjects.length === 0 || (subject !== '🏆 李天豪跨科總複習' && (isScopesLoading || availableScopes.length === 0))}
           >
             開始測驗
           </Button>

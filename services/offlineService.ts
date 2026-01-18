@@ -267,5 +267,22 @@ export const offlineService = {
         const questions = await db.questions.where('subject').equals(subject).toArray();
         const scopes = Array.from(new Set(questions.map(q => q.scope)));
         return scopes;
+    },
+
+    // Special Feature: Cross-Subject Quiz (e.g., Lee Tian-Hao)
+    getCrossSubjectQuestions: async (keyword: string): Promise<Question[]> => {
+        // 1. Find all subjects containing the keyword
+        const questions = await db.questions.toArray();
+        const subjects = Array.from(new Set(questions.map(q => q.subject))).filter(s => s.includes(keyword));
+
+        if (subjects.length === 0) return [];
+
+        // 2. Fetch all questions for these subjects
+        // Dexie doesn't have an 'in' operator for efficient querying in this simplified setup, 
+        // but Since we already loaded all questions to find subjects (inefficient but safe for now), 
+        // we can just filter the already loaded array.
+        // Optimization for later: query DB by subject index.
+
+        return questions.filter(q => subjects.includes(q.subject));
     }
 };
