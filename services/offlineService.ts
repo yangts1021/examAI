@@ -2,6 +2,20 @@ import { db, ImageAsset } from './db';
 import { getGasUrl } from './gasService';
 import { Question } from '../types';
 
+const fetchGas = async (url: string) => {
+    const res = await fetch(url);
+    const contentType = res.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        // Check for common GAS errors
+        if (text.includes("Google Drive") || text.includes("permission") || text.includes("權限") || text.includes("script.google.com")) {
+            throw new Error("權限錯誤：GAS 無法存取 Google Drive，或連線被 Google 阻擋。請檢查 GAS 部署設定。");
+        }
+        throw new Error(`GAS 回傳了非 JSON 格式 (HTML)。可能是權限不足或程式錯誤。`);
+    }
+    return res.json();
+};
+
 export const offlineService = {
     // Sync all data from GAS to Local IndexedDB
     syncData: async (onProgress?: (msg: string) => void) => {
@@ -12,10 +26,7 @@ export const offlineService = {
             // 1. Fetch Subjects
             if (onProgress) onProgress("正在讀取科目列表...");
             const subjectsUrl = `${url}?action=getSubjects`;
-            const subjectsRes = await fetch(subjectsUrl);
-
-            if (!subjectsRes.ok) throw new Error(`GAS Network Error: ${subjectsRes.status}`);
-            const subjectsJson = await subjectsRes.json();
+            const subjectsJson = await fetchGas(subjectsUrl);
 
             if (subjectsJson.status !== 'success' || !Array.isArray(subjectsJson.subjects)) {
                 throw new Error("Failed to fetch subjects: " + JSON.stringify(subjectsJson));
@@ -30,8 +41,7 @@ export const offlineService = {
 
                 // Fetch Scopes for this Subject
                 const scopesUrl = `${url}?action=getScopes&subject=${encodeURIComponent(subject)}`;
-                const scopesRes = await fetch(scopesUrl);
-                const scopesJson = await scopesRes.json();
+                const scopesJson = await fetchGas(scopesUrl);
 
                 if (scopesJson.status !== 'success' || !Array.isArray(scopesJson.scopes)) {
                     console.warn(`Skipping subject ${subject}: Failed to fetch scopes`, scopesJson);
@@ -43,8 +53,7 @@ export const offlineService = {
                     if (onProgress) onProgress(`下載中: ${subject} - ${scope}...`);
 
                     const qUrl = `${url}?action=getQuestions&subject=${encodeURIComponent(subject)}&scope=${encodeURIComponent(scope)}`;
-                    const qRes = await fetch(qUrl);
-                    const qJson = await qRes.json();
+                    const qJson = await fetchGas(qUrl);
 
                     if (qJson.status === 'success' && Array.isArray(qJson.questions)) {
                         // Enrich with subject & scope to ensure we can query locally later

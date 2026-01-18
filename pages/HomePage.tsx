@@ -34,10 +34,11 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       await offlineService.syncData((msg) => setSyncProgress(msg));
       alert('離線題庫同步完成！');
       setSyncProgress('');
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       setSyncProgress('同步失敗');
-      alert('同步失敗，請檢查網路或 GAS 設定。');
+      const msg = error.message || '未知錯誤';
+      alert(`同步失敗：${msg}\n\n請檢查 GAS 部署權限是否為「所有人」。`);
     } finally {
       setIsSyncing(false);
     }
