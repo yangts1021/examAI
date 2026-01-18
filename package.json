@@ -19,6 +19,9 @@
   "devDependencies": {
     "@types/node": "^16.18.68",
     "@vitejs/plugin-react": "^4.2.0",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
     "typescript": "~5.3.3",
     "vite": "^4.5.0"
   }
