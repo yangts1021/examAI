@@ -7,6 +7,20 @@ interface LayoutProps {
 }
 
 const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
+
+  const handleNavClick = (page: string) => {
+    onNavigate(page);
+    setIsMobileMenuOpen(false);
+  };
+
+  const navItems = [
+    { id: 'home', label: '首頁' },
+    { id: 'upload', label: '上傳試卷' },
+    { id: 'quiz', label: '開始測驗' },
+    { id: 'history', label: '歷史紀錄' },
+  ];
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shadow-sm">
@@ -19,33 +33,65 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
             </div>
             <h1 className="text-xl font-bold text-slate-800">ExamAI 考題大師</h1>
           </div>
-          <nav className="flex space-x-4">
-            <button
-              onClick={() => onNavigate('home')}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'home' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              首頁
-            </button>
-            <button
-              onClick={() => onNavigate('upload')}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'upload' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              上傳試卷
-            </button>
-            <button
-              onClick={() => onNavigate('quiz')}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'quiz' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              開始測驗
-            </button>
-            <button
-              onClick={() => onNavigate('history')}
-              className={`px-3 py-2 rounded-md text-sm font-medium ${activeTab === 'history' ? 'bg-blue-50 text-blue-700' : 'text-slate-600 hover:text-slate-900'}`}
-            >
-              歷史紀錄
-            </button>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex space-x-4">
+            {navItems.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => onNavigate(item.id)}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${activeTab === item.id
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                  }`}
+              >
+                {item.label}
+              </button>
+            ))}
           </nav>
+
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 rounded-md text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+              aria-expanded={isMobileMenuOpen}
+            >
+              <span className="sr-only">Open main menu</span>
+              {isMobileMenuOpen ? (
+                // Close icon
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              ) : (
+                // Menu icon
+                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
+
+        {/* Mobile Menu Dropdown */}
+        {isMobileMenuOpen && (
+          <div className="md:hidden border-t border-slate-200 bg-white">
+            <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 shadow-lg">
+              {navItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => handleNavClick(item.id)}
+                  className={`block w-full text-left px-3 py-2 rounded-md text-base font-medium ${activeTab === item.id
+                      ? 'bg-blue-50 text-blue-700'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                    }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </header>
       <main className="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {children}
