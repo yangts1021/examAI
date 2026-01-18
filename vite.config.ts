@@ -16,10 +16,12 @@ export default defineConfig(({ mode }) => {
         registerType: 'autoUpdate',
         includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
         manifest: {
+          id: '/examAI/',
           name: 'ExamAI',
           short_name: 'ExamAI',
           description: 'Offline Exam App',
           theme_color: '#ffffff',
+          display: 'standalone',
           scope: '/examAI/',
           start_url: '/examAI/',
           icons: [
@@ -40,17 +42,10 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           skipWaiting: true,
           clientsClaim: true,
-          maximumFileSizeToCacheInBytes: 5000000,
+          maximumFileSizeToCacheInBytes: 10 * 1024 * 1024,
+          navigateFallback: 'index.html',
+          navigateFallbackDenylist: [/^\/exec/],
           runtimeCaching: [
-            {
-              // Fallback for any other assets on the same origin
-              urlPattern: ({ url }) => url.origin === self.location.origin,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'local-assets-fallback',
-                cacheableResponse: { statuses: [0, 200] }
-              }
-            },
             {
               urlPattern: /^https:\/\/lh3\.googleusercontent\.com\/.*/i,
               handler: 'CacheFirst',
@@ -58,7 +53,7 @@ export default defineConfig(({ mode }) => {
                 cacheName: 'google-profile-images',
                 expiration: {
                   maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                  maxAgeSeconds: 60 * 60 * 24 * 30
                 },
                 cacheableResponse: {
                   statuses: [0, 200]
@@ -67,18 +62,32 @@ export default defineConfig(({ mode }) => {
             }
           ]
         }
-      })
-    ],
-    define: {
-      // Ensuring backward compatibility or direct access if needed
-      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
-      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || '')
-    },
-    base: '/examAI/',
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, '.'),
+              handler: 'CacheFirst',
+        options: {
+          cacheName: 'google-profile-images',
+          expiration: {
+            maxEntries: 10,
+            maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+          },
+          cacheableResponse: {
+            statuses: [0, 200]
+          }
+        }
       }
-    }
+          ]
+  }
+})
+    ],
+define: {
+  // Ensuring backward compatibility or direct access if needed
+  'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
+    'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || '')
+},
+base: '/examAI/',
+  resolve: {
+  alias: {
+    '@': path.resolve(__dirname, '.'),
+      }
+}
   };
 });
