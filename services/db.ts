@@ -17,6 +17,8 @@ export interface OfflineHistory {
     scope: string;
     mistakes: number;
     timestamp: number;
+    submissionData?: any; // Store full submission data for sync
+    synced?: boolean; // True if uploaded to GAS
 }
 
 export class ExamOfflineDB extends Dexie {
