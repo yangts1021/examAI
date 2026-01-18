@@ -1,17 +1,23 @@
 
 export interface Question {
   id?: string;
+  original_id?: string; // For offline DB indexing
   questionNumber?: number;
   text: string;
   optionA: string;
   optionB: string;
   optionC: string;
   optionD: string;
+  // Options array for easier iteration in generic logic
+  options?: string[];
   correctAnswer: string; // 'A', 'B', 'C', or 'D'
   explanation: string;
+  subject?: string; // For offline DB filtering
+  scope?: string; // For offline DB filtering
+
   // 新增：圖片座標 [ymin, xmin, ymax, xmax] (0-1000 scale)
   diagramCoordinates?: number[];
-  // 新增：前端裁切後的圖片 Base64
+  // 新增：前端裁切後的圖片 Base64 或 Blob URL
   diagramUrl?: string;
   // 新增：題組 ID (用於識別多題共用同一文章)
   groupId?: string;

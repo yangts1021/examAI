@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
+import QuestionImage from '../components/QuestionImage';
 import { fetchQuizQuestions, saveQuizResult, fetchScopes, fetchSubjects } from '../services/gasService';
 import { Question, QuizResult } from '../types';
 
@@ -342,9 +343,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
                 </h3>
 
                 {/* 顯示題目配圖 (如果有) */}
+                {/* 顯示題目配圖 (如果有) */}
                 {q.diagramUrl && (
                   <div className="mb-6 flex justify-center bg-slate-50 p-4 rounded-lg border border-slate-100">
-                    <img
+                    <QuestionImage
                       src={q.diagramUrl}
                       alt={`Diagram for Question ${q.questionNumber || idx + 1}`}
                       className="max-h-64 max-w-full object-contain rounded"
@@ -434,7 +436,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
 
                 {q.diagramUrl && (
                   <div className="my-3 flex justify-start">
-                    <img
+                    <QuestionImage
                       src={q.diagramUrl}
                       alt="Question Diagram"
                       className="max-h-40 max-w-full object-contain rounded border border-slate-300 p-1 bg-white"

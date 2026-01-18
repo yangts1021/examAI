@@ -3,12 +3,16 @@ import Button from '../components/Button';
 import { AppRoute } from '../types';
 import { getGasUrl, setGasUrl } from '../services/gasService';
 
+import { offlineService } from '../services/offlineService';
+
 interface HomePageProps {
   onNavigate: (page: AppRoute) => void;
 }
 
 const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [gasUrl, setGasUrlState] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncProgress, setSyncProgress] = useState('');
 
   useEffect(() => {
     setGasUrlState(getGasUrl());
@@ -21,6 +25,22 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const handleSaveUrl = () => {
     setGasUrl(gasUrl);
     alert('GAS 網址已儲存！');
+  };
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    setSyncProgress('準備開始...');
+    try {
+      await offlineService.syncData((msg) => setSyncProgress(msg));
+      alert('離線題庫同步完成！');
+      setSyncProgress('');
+    } catch (error) {
+      console.error(error);
+      setSyncProgress('同步失敗');
+      alert('同步失敗，請檢查網路或 GAS 設定。');
+    } finally {
+      setIsSyncing(false);
+    }
   };
 
   return (
@@ -55,6 +75,25 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
         <p className="text-xs text-slate-500 mt-2">
           請貼上部署為「網頁應用程式」後的網址 (以 <code>/exec</code> 結尾)。
         </p>
+
+        {/* Offline Sync Controls */}
+        <div className="mt-4 pt-4 border-t border-slate-100">
+          <div className="flex items-center gap-4">
+            <Button
+              onClick={handleSync}
+              disabled={isSyncing || !gasUrl}
+              variant="secondary"
+              size="sm"
+            >
+              {isSyncing ? '同步中...' : '下載離線題庫'}
+            </Button>
+            {syncProgress && (
+              <span className="text-sm text-slate-600 animate-pulse">
+                {syncProgress}
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
