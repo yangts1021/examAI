@@ -20,6 +20,8 @@ export default defineConfig(({ mode }) => {
           short_name: 'ExamAI',
           description: 'Offline Exam App',
           theme_color: '#ffffff',
+          scope: '/examAI/',
+          start_url: '/examAI/',
           icons: [
             {
               src: 'pwa-192x192.png',
@@ -36,8 +38,19 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
           cleanupOutdatedCaches: true,
-          maximumFileSizeToCacheInBytes: 5000000, // 5MB
+          skipWaiting: true,
+          clientsClaim: true,
+          maximumFileSizeToCacheInBytes: 5000000,
           runtimeCaching: [
+            {
+              // Fallback for any other assets on the same origin
+              urlPattern: ({ url }) => url.origin === self.location.origin,
+              handler: 'StaleWhileRevalidate',
+              options: {
+                cacheName: 'local-assets-fallback',
+                cacheableResponse: { statuses: [0, 200] }
+              }
+            },
             {
               urlPattern: /^https:\/\/lh3\.googleusercontent\.com\/.*/i,
               handler: 'CacheFirst',
