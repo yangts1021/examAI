@@ -15,6 +15,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   const [syncProgress, setSyncProgress] = useState('');
 
   useEffect(() => {
+    // Just load the URL, don't alert immediately.
     setGasUrlState(getGasUrl());
   }, []);
 

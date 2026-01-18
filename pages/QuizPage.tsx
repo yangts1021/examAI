@@ -57,12 +57,25 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
       setIsSubjectsLoading(true);
       try {
         const fetchedSubjects = await fetchSubjects();
-        setSubjects(fetchedSubjects);
         if (fetchedSubjects.length > 0) {
+          setSubjects(fetchedSubjects);
           setSubject(fetchedSubjects[0]);
+        } else {
+          throw new Error("No subjects from GAS");
         }
       } catch (error) {
-        console.error("Failed to load subjects", error);
+        console.warn("Failed to load subjects online, trying offline...", error);
+        // Fallback to offline
+        try {
+          const { offlineService } = await import('../services/offlineService');
+          const offlineSubjects = await offlineService.getSubjects();
+          setSubjects(offlineSubjects);
+          if (offlineSubjects.length > 0) {
+            setSubject(offlineSubjects[0]);
+          }
+        } catch (offlineError) {
+          console.error("Failed to load offline subjects", offlineError);
+        }
       } finally {
         setIsSubjectsLoading(false);
       }
@@ -88,14 +101,31 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
       setIsScopesLoading(true);
       setScope(''); // 重置目前選擇的範圍
       setAvailableScopes([]);
+
+      // Special casing for cross-subject mode is handled by UI hiding this selector, 
+      // but double check here if needed? No, purely relying on subject change is fine.
+      if (subject === '🏆 李天豪跨科總複習') return;
+
       try {
         const scopes = await fetchScopes(subject);
-        setAvailableScopes(scopes);
         if (scopes.length > 0) {
-          setScope(scopes[0]); // 預設選擇第一個
+          setAvailableScopes(scopes);
+          setScope(scopes[0]);
+        } else {
+          throw new Error("No scopes from GAS");
         }
       } catch (error) {
-        console.error("Failed to load scopes", error);
+        console.warn("Failed to load scopes online, trying offline...", error);
+        try {
+          const { offlineService } = await import('../services/offlineService');
+          const offlineScopes = await offlineService.getScopes(subject);
+          setAvailableScopes(offlineScopes);
+          if (offlineScopes.length > 0) {
+            setScope(offlineScopes[0]);
+          }
+        } catch (offlineErr) {
+          console.error("Failed to load offline scopes", offlineErr);
+        }
       } finally {
         setIsScopesLoading(false);
       }
@@ -122,7 +152,15 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
         const { offlineService } = await import('../services/offlineService');
         q = await offlineService.getCrossSubjectQuestions('李天豪');
       } else {
-        q = await fetchQuizQuestions(subject, scope);
+        // Normal mode: Try online first, fallback to offline
+        try {
+          q = await fetchQuizQuestions(subject, scope);
+          if (q.length === 0) throw new Error("No questions online");
+        } catch (onlineErr) {
+          console.warn("Failed to fetch questions online, trying offline...", onlineErr);
+          const { offlineService } = await import('../services/offlineService');
+          q = await offlineService.getQuestions(subject, scope);
+        }
       }
 
       if (q.length === 0) {
