@@ -47,6 +47,13 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     },
   });
 
+  // Check if SW is already controlling the page (meaning offline ready)
+  useEffect(() => {
+    if (navigator.serviceWorker?.controller) {
+      setOfflineReady(true);
+    }
+  }, [setOfflineReady]);
+
   const handleSync = async () => {
     setIsSyncing(true);
     setSyncProgress('準備開始...');
@@ -68,7 +75,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
     <div className="flex flex-col items-center justify-center py-12 space-y-12">
       <div className="text-center space-y-4 max-w-2xl">
         <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight sm:text-5xl">
-          AI 智慧助攻，考試更輕鬆 <span className="text-sm font-normal text-slate-400">(v1.2)</span>
+          AI 智慧助攻，考試更輕鬆 <span className="text-sm font-normal text-slate-400">(v1.4)</span>
         </h2>
         <p className="text-xl text-slate-600">
           上傳試卷自動數位化，或使用 AI 生成測驗自我挑戰。
