@@ -62,32 +62,17 @@ export default defineConfig(({ mode }) => {
             }
           ]
         }
-              handler: 'CacheFirst',
-        options: {
-          cacheName: 'google-profile-images',
-          expiration: {
-            maxEntries: 10,
-            maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-          },
-          cacheableResponse: {
-            statuses: [0, 200]
-          }
-        }
-      }
-          ]
-  }
-})
+      })
     ],
-define: {
-  // Ensuring backward compatibility or direct access if needed
-  'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
-    'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || '')
-},
-base: '/examAI/',
-  resolve: {
-  alias: {
-    '@': path.resolve(__dirname, '.'),
+    define: {
+      'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ''),
+      'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || '')
+    },
+    base: '/examAI/',
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, '.'),
       }
-}
+    }
   };
 });
