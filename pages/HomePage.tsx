@@ -74,7 +74,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-12">
       <div className="text-center space-y-4 max-w-2xl">
-        <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight sm:text-5xl">
+        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-5xl">
           AI 智慧助攻，考試更輕鬆 <span className="text-sm font-normal text-slate-400">(v1.8)</span>
         </h2>
         <p className="text-xl text-slate-600">
