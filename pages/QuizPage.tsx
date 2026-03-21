@@ -22,6 +22,7 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
   const [isScopesLoading, setIsScopesLoading] = useState(false);
 
   const [questionCount, setQuestionCount] = useState<number>(5);
+  const [isRandomOrder, setIsRandomOrder] = useState(false);
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -168,12 +169,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
         return;
       }
 
-      // --- Group-based Shuffling Logic Start ---
+      // --- Group-based Selection Logic Start ---
       const groups: Record<string, Question[]> = {};
 
       // 1. Group questions
       q.forEach(question => {
-        // Use groupId if available, otherwise create a unique key for single questions
         const key = question.groupId ? question.groupId : `single-${question.id || Math.random()}`;
         if (!groups[key]) {
           groups[key] = [];
@@ -181,8 +181,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
         groups[key].push(question);
       });
 
-      // 2. Shuffle the group keys
-      const groupKeys = Object.keys(groups).sort(() => 0.5 - Math.random());
+      // 2. Get group keys — shuffle if random order, keep original order otherwise
+      const groupKeys = isRandomOrder
+        ? Object.keys(groups).sort(() => 0.5 - Math.random())
+        : Object.keys(groups);
 
       // 3. Reconstruct the list, respecting the limit
       let selectedQuestions: Question[] = [];
@@ -191,20 +193,11 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
       for (const key of groupKeys) {
         if (selectedQuestions.length >= limit) break;
 
-        // Ensure questions within a group are sorted by question number (if available) to maintain logical order
         const groupQuestions = groups[key].sort((a, b) => (a.questionNumber || 0) - (b.questionNumber || 0));
-
         selectedQuestions.push(...groupQuestions);
       }
 
-      // Note: This might slightly exceed 'limit' if the last group added has multiple questions.
-      // We explicitly ALLOW this to keep groups intact.
-      // E.g. limit is 5, we have 4 questions, next group has 3. Total becomes 7.
-      // if (selectedQuestions.length > limit) {
-      //    selectedQuestions = selectedQuestions.slice(0, limit);
-      // }
-
-      // --- Group-based Shuffling Logic End ---
+      // --- Group-based Selection Logic End ---
 
       setQuestions(selectedQuestions);
       setStep('quiz');
@@ -362,6 +355,19 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
               <option value={-1}>全部題目</option>
             </select>
             <p className="text-xs text-slate-500 mt-1">若資料庫題數不足，將顯示所有可用題目。</p>
+          </div>
+
+          {/* 出題順序 */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">出題順序</label>
+            <select
+              value={isRandomOrder ? 'random' : 'sequential'}
+              onChange={(e) => setIsRandomOrder(e.target.value === 'random')}
+              className="w-full rounded-lg border-slate-300 focus:ring-blue-500 focus:border-blue-500 p-2.5 bg-white text-slate-900"
+            >
+              <option value="sequential">按照考卷順序</option>
+              <option value="random">隨機出題</option>
+            </select>
           </div>
 
           <Button
