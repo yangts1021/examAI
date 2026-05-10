@@ -507,7 +507,10 @@ const QuizPage: React.FC<QuizPageProps> = ({ initialQuestions, initialSubject, i
 
               <div className={`p-6 rounded-xl border ${res.isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}>
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-semibold text-slate-900">{q.text}</h3>
+                  <h3 className="font-semibold text-slate-900">
+                    <span className="text-slate-400 mr-2">第 {q.questionNumber || idx + 1} 題.</span>
+                    {q.text}
+                  </h3>
                   <span className={`text-sm font-bold ${res.isCorrect ? 'text-green-700' : 'text-red-700'}`}>
                     {res.isCorrect ? '答對' : '答錯'}
                   </span>
