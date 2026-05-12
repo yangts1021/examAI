@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AppRoute } from './types';
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
-import UploadPage from './pages/UploadPage';
 import QuizPage from './pages/QuizPage';
+import DabuTiePage from './pages/DabuTiePage';
 
 import HistoryPage from './pages/HistoryPage';
 
@@ -40,8 +40,6 @@ const App: React.FC = () => {
 
   const renderPage = () => {
     switch (route) {
-      case AppRoute.UPLOAD:
-        return <UploadPage />;
       case AppRoute.QUIZ:
         return <QuizPage
           initialQuestions={pageState?.reviewQuestions}
@@ -50,6 +48,8 @@ const App: React.FC = () => {
         />;
       case AppRoute.HISTORY:
         return <HistoryPage onNavigate={navigate} />;
+      case AppRoute.DABU_TIE:
+        return <DabuTiePage />;
       case AppRoute.HOME:
       default:
         return <HomePage onNavigate={(r) => navigate(r)} />;

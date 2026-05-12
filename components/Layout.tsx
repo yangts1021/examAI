@@ -16,8 +16,8 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
 
   const navItems = [
     { id: 'home', label: '首頁' },
-    { id: 'upload', label: '上傳試卷' },
     { id: 'quiz', label: '開始測驗' },
+    { id: 'dabu-tie', label: '國文大補帖' },
     { id: 'history', label: '歷史紀錄' },
   ];
 
@@ -98,7 +98,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
       </main>
       <footer className="bg-white border-t border-slate-200 py-6 mt-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
-          &copy; {new Date().getFullYear()} ExamAI 考題大師. Powered by Gemini.
+          &copy; {new Date().getFullYear()} ExamAI 考題大師.
         </div>
       </footer>
     </div>

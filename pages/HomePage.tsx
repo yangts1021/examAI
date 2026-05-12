@@ -78,7 +78,7 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
           AI 智慧助攻，考試更輕鬆 <span className="text-sm font-normal text-slate-400">(v1.8)</span>
         </h2>
         <p className="text-xl text-slate-600">
-          上傳試卷自動數位化，或使用 AI 生成測驗自我挑戰。
+          從題庫隨機抽選題目，即時評分自我挑戰。
         </p>
 
         {/* PWA Status Indicator */}
@@ -147,24 +147,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
-        {/* Upload Card */}
-        <div className="bg-white overflow-hidden shadow-lg rounded-2xl border border-slate-200 hover:shadow-xl transition-shadow duration-300">
-          <div className="p-8 flex flex-col h-full">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mb-6 text-blue-600">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-            </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-2">上傳試卷</h3>
-            <p className="text-slate-500 mb-8 flex-grow">
-              拍下你的考卷。Gemini 將協助分析、提取題目、解題，並將所有資料儲存至 Google Sheets。
-            </p>
-            <Button onClick={() => onNavigate(AppRoute.UPLOAD)} className="w-full">
-              開始上傳
-            </Button>
-          </div>
-        </div>
-
         {/* Quiz Card */}
         <div className="bg-white overflow-hidden shadow-lg rounded-2xl border border-slate-200 hover:shadow-xl transition-shadow duration-300">
           <div className="p-8 flex flex-col h-full">
@@ -179,6 +161,24 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
             </p>
             <Button variant="secondary" onClick={() => onNavigate(AppRoute.QUIZ)} className="w-full">
               開始測驗
+            </Button>
+          </div>
+        </div>
+
+        {/* Dabu Tie Card */}
+        <div className="bg-white overflow-hidden shadow-lg rounded-2xl border border-slate-200 hover:shadow-xl transition-shadow duration-300">
+          <div className="p-8 flex flex-col h-full">
+            <div className="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 text-emerald-600">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <h3 className="text-xl font-bold text-slate-900 mb-2">國文大補帖測驗</h3>
+            <p className="text-slate-500 mb-8 flex-grow">
+              國字、注音、注釋大補帖練習。可選擇範圍，自行作答後立即批改，錯題會記錄供反覆練習。
+            </p>
+            <Button variant="primary" onClick={() => onNavigate(AppRoute.DABU_TIE)} className="w-full">
+              前往大補帖
             </Button>
           </div>
         </div>

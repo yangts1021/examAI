@@ -46,7 +46,7 @@ export interface QuizSubmission {
 
 export enum AppRoute {
   HOME = 'home',
-  UPLOAD = 'upload',
   QUIZ = 'quiz',
   HISTORY = 'history',
+  DABU_TIE = 'dabu-tie',
 }
