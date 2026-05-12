@@ -128,8 +128,11 @@ function handleGetScopes(ss, subject) {
 }
 
 function handleUpload(ss, data) {
-  var sheet = ss.getSheetByName("科目");
-  if (!sheet) return createResponse({ status: 'error', message: '找不到 [科目] 工作表' });
+  var sheet = ss.getSheetByName("題庫");
+  if (!sheet) {
+    sheet = ss.insertSheet("題庫");
+    sheet.appendRow(["ID", "科目", "範圍", "題號", "題目", "選項A", "選項B", "選項C", "選項D", "答案", "詳解", "圖片URL", "groupId", "groupContent"]);
+  }
 
   // 1. Update Metadata Index (Category Index)
   updateMetadata(ss, data.subject, data.scope);
@@ -221,7 +224,7 @@ function updateMetadata(ss, subject, scope) {
 // -------------------------------------------------------------
 function rebuildMetadataIndex() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var questionSheet = ss.getSheetByName("科目");
+  var questionSheet = ss.getSheetByName("題庫");
   var metaSheet = getOrInitMetadataSheet(ss); // Creates if not exists
 
   // Clear existing data (except header if you want, but easier to clear all)
@@ -258,8 +261,8 @@ function saveImageToDrive(folder, base64String, fileName) {
 }
 
 function handleGetQuestions(ss, subject, scope) {
-  var sheet = ss.getSheetByName("科目");
-  if (!sheet) return createResponse({ status: 'error', message: '找不到 [科目] 工作表' });
+  var sheet = ss.getSheetByName("題庫");
+  if (!sheet) return createResponse({ status: 'success', questions: [] });
 
   var data = sheet.getDataRange().getValues();
   var resultQuestions = [];
