@@ -310,40 +310,56 @@ const DabuTiePage: React.FC = () => {
           </div>
         </div>
 
-        {Object.entries(grouped).map(([section, qs]) => (
-          <div key={section} className="bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="px-6 py-3 border-b border-slate-100 text-base font-bold text-slate-800">
-              {section}
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 p-4">
-              {qs.map((q) => (
-                <div key={q.id} className="flex items-start gap-2">
-                  <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold">
-                    {q.number}
-                  </span>
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="text-sm text-slate-800 break-words leading-snug">
-                      {q.prompt}
+        {Object.entries(grouped).map(([section, qs]) => {
+          const isDefinition = qs[0]?.type === 'definition';
+          const gridClass = isDefinition
+            ? 'grid grid-cols-1 gap-y-4 p-5'
+            : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 p-4';
+          return (
+            <div key={section} className="bg-white rounded-2xl shadow-sm border border-slate-200">
+              <h3 className="px-6 py-3 border-b border-slate-100 text-base font-bold text-slate-800">
+                {section}
+              </h3>
+              <div className={gridClass}>
+                {qs.map((q) => (
+                  <div key={q.id} className="flex items-start gap-3">
+                    <span
+                      className={`shrink-0 inline-flex items-center justify-center rounded-md bg-slate-100 text-slate-600 font-semibold ${
+                        isDefinition ? 'w-9 h-9 text-base' : 'w-7 h-7 text-xs'
+                      }`}
+                    >
+                      {q.number}
+                    </span>
+                    <div className="flex-1 min-w-0 space-y-2">
+                      <div
+                        className={`text-slate-800 break-words leading-snug ${
+                          isDefinition ? 'text-xl font-medium' : 'text-sm'
+                        }`}
+                      >
+                        {q.prompt}
+                      </div>
+                      <input
+                        type="text"
+                        value={answers[q.id] ?? ''}
+                        onChange={(e) => handleAnswerChange(q.id, e.target.value)}
+                        placeholder={
+                          q.type === 'character'
+                            ? '請輸入國字'
+                            : q.type === 'phonetic'
+                              ? '請輸入注音'
+                              : '請輸入釋義'
+                        }
+                        className={`w-full rounded border-slate-300 focus:ring-blue-500 focus:border-blue-500 ${
+                          isDefinition ? 'text-lg p-2.5' : 'text-sm p-1.5'
+                        }`}
+                      />
                     </div>
-                    <input
-                      type="text"
-                      value={answers[q.id] ?? ''}
-                      onChange={(e) => handleAnswerChange(q.id, e.target.value)}
-                      placeholder={
-                        q.type === 'character'
-                          ? '請輸入國字'
-                          : q.type === 'phonetic'
-                            ? '請輸入注音'
-                            : '請輸入釋義'
-                      }
-                      className="w-full rounded border-slate-300 focus:ring-blue-500 focus:border-blue-500 text-sm p-1.5"
-                    />
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
         <div className="flex justify-end gap-2 pb-8">
           <Button variant="outline" onClick={backToSelect}>放棄</Button>
@@ -397,59 +413,105 @@ const DabuTiePage: React.FC = () => {
         </div>
 
         {/* 詳細答題狀況 */}
-        {Object.entries(grouped).map(([section, items]) => (
-          <div key={section} className="bg-white rounded-2xl shadow-sm border border-slate-200">
-            <h3 className="px-6 py-3 border-b border-slate-100 text-base font-bold text-slate-800">
-              {section}
-            </h3>
-            <div className="divide-y divide-slate-100">
-              {items.map((r) => (
-                <div
-                  key={r.question.id}
-                  className={`px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:gap-4 ${
-                    r.isCorrect ? '' : 'bg-red-50/50'
-                  }`}
-                >
-                  <div className="flex items-center gap-2 sm:w-44 shrink-0">
-                    <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold">
-                      {r.question.number}
-                    </span>
-                    <span className="text-sm text-slate-800 truncate">{r.question.prompt}</span>
-                  </div>
-                  <div className="flex-1 mt-1 sm:mt-0 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
-                    <div>
-                      <span className="text-slate-500 mr-2">你的答案：</span>
-                      <span
-                        className={
-                          r.isCorrect
-                            ? 'text-emerald-700 font-medium'
-                            : 'text-red-700 font-medium line-through'
-                        }
-                      >
-                        {r.userAnswer || '（未作答）'}
-                      </span>
+        {Object.entries(grouped).map(([section, items]) => {
+          const isDefinition = items[0]?.question.type === 'definition';
+          return (
+            <div key={section} className="bg-white rounded-2xl shadow-sm border border-slate-200">
+              <h3 className="px-6 py-3 border-b border-slate-100 text-base font-bold text-slate-800">
+                {section}
+              </h3>
+              <div className="divide-y divide-slate-100">
+                {items.map((r) =>
+                  isDefinition ? (
+                    <div
+                      key={r.question.id}
+                      className={`px-6 py-4 ${r.isCorrect ? '' : 'bg-red-50/50'}`}
+                    >
+                      <div className="flex items-center gap-3 mb-3">
+                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-slate-100 text-slate-700 text-base font-semibold shrink-0">
+                          {r.question.number}
+                        </span>
+                        <span className="text-xl font-medium text-slate-800 break-words flex-1">
+                          {r.question.prompt}
+                        </span>
+                        {r.isCorrect ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 shrink-0">
+                            ✓ 正確
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 shrink-0">
+                            ✗ 錯誤
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-1.5 pl-12 text-base">
+                        <div>
+                          <span className="text-slate-500 mr-2">你的答案：</span>
+                          <span
+                            className={
+                              r.isCorrect
+                                ? 'text-emerald-700 font-medium'
+                                : 'text-red-700 font-medium line-through'
+                            }
+                          >
+                            {r.userAnswer || '（未作答）'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 mr-2">正確答案：</span>
+                          <span className="text-slate-900 font-semibold">{r.question.answer}</span>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-slate-500 mr-2">正確答案：</span>
-                      <span className="text-slate-900 font-semibold">{r.question.answer}</span>
+                  ) : (
+                    <div
+                      key={r.question.id}
+                      className={`px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:gap-4 ${
+                        r.isCorrect ? '' : 'bg-red-50/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 sm:w-44 shrink-0">
+                        <span className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-slate-100 text-slate-600 text-xs font-semibold">
+                          {r.question.number}
+                        </span>
+                        <span className="text-sm text-slate-800 truncate">{r.question.prompt}</span>
+                      </div>
+                      <div className="flex-1 mt-1 sm:mt-0 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-slate-500 mr-2">你的答案：</span>
+                          <span
+                            className={
+                              r.isCorrect
+                                ? 'text-emerald-700 font-medium'
+                                : 'text-red-700 font-medium line-through'
+                            }
+                          >
+                            {r.userAnswer || '（未作答）'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 mr-2">正確答案：</span>
+                          <span className="text-slate-900 font-semibold">{r.question.answer}</span>
+                        </div>
+                      </div>
+                      <div className="shrink-0 mt-1 sm:mt-0">
+                        {r.isCorrect ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
+                            ✓ 正確
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                            ✗ 錯誤
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="shrink-0 mt-1 sm:mt-0">
-                    {r.isCorrect ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700">
-                        ✓ 正確
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
-                        ✗ 錯誤
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                  ),
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     );
   }
