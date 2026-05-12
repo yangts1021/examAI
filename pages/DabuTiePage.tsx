@@ -19,6 +19,7 @@ import {
 
 type Mode = 'select' | 'practice' | 'result';
 type Source = 'all' | 'wrong';
+type SectionFilter = 'all' | 'character_phonetic' | 'definition';
 
 interface GradedResult {
   question: DabuTieQuestion;
@@ -26,9 +27,22 @@ interface GradedResult {
   isCorrect: boolean;
 }
 
+const SECTION_FILTERS: { id: SectionFilter; label: string }[] = [
+  { id: 'all', label: '全部' },
+  { id: 'character_phonetic', label: '國字注音' },
+  { id: 'definition', label: '注釋' },
+];
+
+const matchesSectionFilter = (q: DabuTieQuestion, filter: SectionFilter): boolean => {
+  if (filter === 'all') return true;
+  if (filter === 'definition') return q.type === 'definition';
+  return q.type !== 'definition';
+};
+
 const DabuTiePage: React.FC = () => {
   const [mode, setMode] = useState<Mode>('select');
   const [source, setSource] = useState<Source>('all');
+  const [sectionFilter, setSectionFilter] = useState<SectionFilter>('all');
   const [scopeId, setScopeId] = useState<string>(DABU_TIE_SCOPES[0]?.id ?? '');
   const [practiceQuestions, setPracticeQuestions] = useState<DabuTieQuestion[]>([]);
   const [answers, setAnswers] = useState<Record<string, string>>({});
@@ -54,22 +68,36 @@ const DabuTiePage: React.FC = () => {
       const summaries = getWrongSummary(scope.id);
       questions = summaries
         .map((s) => getQuestionById(scope.id, s.questionId))
-        .filter((q): q is DabuTieQuestion => !!q);
+        .filter((q): q is DabuTieQuestion => !!q)
+        .filter((q) => matchesSectionFilter(q, sectionFilter));
       if (questions.length === 0) {
-        alert('目前沒有錯題紀錄，請先進行一次完整練習。');
+        alert('目前沒有符合條件的錯題，請先進行一次完整練習。');
         return;
       }
     } else {
-      questions = scope.questions;
+      questions = scope.questions.filter((q) => matchesSectionFilter(q, sectionFilter));
+      if (questions.length === 0) {
+        alert('此題型尚無題目。');
+        return;
+      }
     }
     setSource(src);
     setPracticeQuestions(questions);
     setAnswers({});
     setResults([]);
     setMode('practice');
-    // 切回頂部
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   };
+
+  const filteredWrongSummary = useMemo(
+    () =>
+      wrongSummary.filter((w) => {
+        if (!scope) return false;
+        const q = getQuestionById(scope.id, w.questionId);
+        return q ? matchesSectionFilter(q, sectionFilter) : false;
+      }),
+    [wrongSummary, scope, sectionFilter],
+  );
 
   const handleAnswerChange = (questionId: string, value: string) => {
     setAnswers((prev) => ({ ...prev, [questionId]: value }));
@@ -148,10 +176,40 @@ const DabuTiePage: React.FC = () => {
             {scope && (
               <p className="text-xs text-slate-500 mt-2">
                 共 {scope.questions.length} 題（
-                {scope.questions.filter((q) => q.section.includes('國字')).length} 國字注音 +{' '}
+                {scope.questions.filter((q) => q.type !== 'definition').length} 國字注音 +{' '}
                 {scope.questions.filter((q) => q.type === 'definition').length} 注釋）
               </p>
             )}
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-2">
+              題型
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {SECTION_FILTERS.map((f) => {
+                const count = scope
+                  ? scope.questions.filter((q) => matchesSectionFilter(q, f.id)).length
+                  : 0;
+                const active = sectionFilter === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    onClick={() => setSectionFilter(f.id)}
+                    className={`px-3 py-2.5 rounded-lg text-sm font-medium border transition-colors ${
+                      active
+                        ? 'bg-blue-50 border-blue-500 text-blue-700'
+                        : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {f.label}
+                    <span className={`ml-1 text-xs ${active ? 'text-blue-500' : 'text-slate-400'}`}>
+                      ({count})
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -161,30 +219,30 @@ const DabuTiePage: React.FC = () => {
               onClick={() => startPractice('all')}
               className="w-full"
             >
-              開始完整練習
+              開始練習
             </Button>
             <Button
               variant="secondary"
               size="lg"
               onClick={() => startPractice('wrong')}
               className="w-full"
-              disabled={wrongSummary.length === 0}
+              disabled={filteredWrongSummary.length === 0}
             >
-              {wrongSummary.length > 0
-                ? `只練錯題 (${wrongSummary.length})`
+              {filteredWrongSummary.length > 0
+                ? `只練錯題 (${filteredWrongSummary.length})`
                 : '尚無錯題'}
             </Button>
           </div>
 
-          {wrongSummary.length > 0 && scope && (
+          {filteredWrongSummary.length > 0 && scope && (
             <div className="pt-4 border-t border-slate-100">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-slate-700">
-                  錯題紀錄（共 {wrongSummary.length} 題）
+                  錯題紀錄（{sectionFilter === 'all' ? '全部' : SECTION_FILTERS.find(f => f.id === sectionFilter)?.label}，共 {filteredWrongSummary.length} 題）
                 </h3>
                 <button
                   onClick={() => {
-                    if (window.confirm('確定要清空所有錯題紀錄嗎？')) {
+                    if (window.confirm('確定要清空此範圍所有錯題紀錄嗎？（會清掉所有題型的錯題）')) {
                       clearAllWrong(scope.id);
                       setWrongSummary([]);
                     }
@@ -195,7 +253,7 @@ const DabuTiePage: React.FC = () => {
                 </button>
               </div>
               <div className="max-h-64 overflow-y-auto border border-slate-200 rounded-lg divide-y divide-slate-100">
-                {wrongSummary.map((w) => {
+                {filteredWrongSummary.map((w) => {
                   const q = getQuestionById(scope.id, w.questionId);
                   if (!q) return null;
                   return (
