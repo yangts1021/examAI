@@ -89,7 +89,11 @@ export const clearAllWrong = (scopeId: string) => {
   writeAll(filtered);
 };
 
-// 嚴格字串比對：去除前後空白後比對
+// 比對前的標準化：去除前後空白，並忽略末尾的句號 (注釋答案常以「。」結尾)
+export const normalizeAnswer = (s: string): string =>
+  s.trim().replace(/。+$/, '');
+
+// 嚴格字串比對：套用 normalizeAnswer 後比對
 export const isAnswerCorrect = (userAnswer: string, correctAnswer: string): boolean => {
-  return userAnswer.trim() === correctAnswer.trim();
+  return normalizeAnswer(userAnswer) === normalizeAnswer(correctAnswer);
 };

@@ -14,6 +14,7 @@ import {
   clearWrongForQuestion,
   getWrongSummary,
   isAnswerCorrect,
+  normalizeAnswer,
   saveAttempts,
 } from '../services/dabuTieService';
 
@@ -38,6 +39,94 @@ const matchesSectionFilter = (q: DabuTieQuestion, filter: SectionFilter): boolea
   if (filter === 'definition') return q.type === 'definition';
   return q.type !== 'definition';
 };
+
+type DiffOp = 'match' | 'add' | 'remove';
+interface DiffPart {
+  text: string;
+  type: DiffOp;
+}
+
+// 以 LCS 計算兩字串的字元級差異，回傳兩條序列：
+//   userParts: 使用者作答；match=共同，remove=使用者多打的
+//   correctParts: 正確答案；match=共同，add=使用者漏掉的
+const diffStrings = (
+  user: string,
+  correct: string,
+): { userParts: DiffPart[]; correctParts: DiffPart[] } => {
+  const m = user.length;
+  const n = correct.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] =
+        user[i - 1] === correct[j - 1]
+          ? dp[i - 1][j - 1] + 1
+          : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  const userOut: DiffPart[] = [];
+  const correctOut: DiffPart[] = [];
+  let i = m;
+  let j = n;
+  while (i > 0 && j > 0) {
+    if (user[i - 1] === correct[j - 1]) {
+      userOut.unshift({ text: user[i - 1], type: 'match' });
+      correctOut.unshift({ text: correct[j - 1], type: 'match' });
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      userOut.unshift({ text: user[i - 1], type: 'remove' });
+      i--;
+    } else {
+      correctOut.unshift({ text: correct[j - 1], type: 'add' });
+      j--;
+    }
+  }
+  while (i > 0) {
+    userOut.unshift({ text: user[--i], type: 'remove' });
+  }
+  while (j > 0) {
+    correctOut.unshift({ text: correct[--j], type: 'add' });
+  }
+  const merge = (parts: DiffPart[]): DiffPart[] => {
+    const out: DiffPart[] = [];
+    for (const p of parts) {
+      const last = out[out.length - 1];
+      if (last && last.type === p.type) last.text += p.text;
+      else out.push({ ...p });
+    }
+    return out;
+  };
+  return { userParts: merge(userOut), correctParts: merge(correctOut) };
+};
+
+const renderDiffUser = (parts: DiffPart[]) =>
+  parts.map((p, idx) =>
+    p.type === 'match' ? (
+      <span key={idx} className="text-slate-800">{p.text}</span>
+    ) : (
+      <span
+        key={idx}
+        className="text-red-700 bg-red-100 line-through rounded px-0.5"
+      >
+        {p.text}
+      </span>
+    ),
+  );
+
+const renderDiffCorrect = (parts: DiffPart[]) =>
+  parts.map((p, idx) =>
+    p.type === 'match' ? (
+      <span key={idx} className="text-slate-900 font-semibold">{p.text}</span>
+    ) : (
+      <span
+        key={idx}
+        className="text-emerald-800 bg-emerald-100 underline decoration-2 underline-offset-2 font-semibold rounded px-0.5"
+      >
+        {p.text}
+      </span>
+    ),
+  );
 
 const DabuTiePage: React.FC = () => {
   const [mode, setMode] = useState<Mode>('select');
@@ -423,46 +512,59 @@ const DabuTiePage: React.FC = () => {
               <div className="divide-y divide-slate-100">
                 {items.map((r) =>
                   isDefinition ? (
-                    <div
-                      key={r.question.id}
-                      className={`px-6 py-4 ${r.isCorrect ? '' : 'bg-red-50/50'}`}
-                    >
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-slate-100 text-slate-700 text-base font-semibold shrink-0">
-                          {r.question.number}
-                        </span>
-                        <span className="text-xl font-medium text-slate-800 break-words flex-1">
-                          {r.question.prompt}
-                        </span>
-                        {r.isCorrect ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 shrink-0">
-                            ✓ 正確
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 shrink-0">
-                            ✗ 錯誤
-                          </span>
-                        )}
-                      </div>
-                      <div className="space-y-1.5 pl-12 text-base">
-                        <div>
-                          <span className="text-slate-500 mr-2">你的答案：</span>
-                          <span
-                            className={
-                              r.isCorrect
-                                ? 'text-emerald-700 font-medium'
-                                : 'text-red-700 font-medium line-through'
-                            }
-                          >
-                            {r.userAnswer || '（未作答）'}
-                          </span>
+                    (() => {
+                      const userNorm = normalizeAnswer(r.userAnswer);
+                      const correctNorm = normalizeAnswer(r.question.answer);
+                      const diff = diffStrings(userNorm, correctNorm);
+                      return (
+                        <div
+                          key={r.question.id}
+                          className={`px-6 py-4 ${r.isCorrect ? '' : 'bg-red-50/50'}`}
+                        >
+                          <div className="flex items-center gap-3 mb-3">
+                            <span className="inline-flex items-center justify-center w-9 h-9 rounded-md bg-slate-100 text-slate-700 text-base font-semibold shrink-0">
+                              {r.question.number}
+                            </span>
+                            <span className="text-xl font-medium text-slate-800 break-words flex-1">
+                              {r.question.prompt}
+                            </span>
+                            {r.isCorrect ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-emerald-100 text-emerald-700 shrink-0">
+                                ✓ 正確
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700 shrink-0">
+                                ✗ 錯誤
+                              </span>
+                            )}
+                          </div>
+                          <div className="space-y-1.5 pl-12 text-base">
+                            <div>
+                              <span className="text-slate-500 mr-2">你的答案：</span>
+                              {userNorm.length === 0 ? (
+                                <span className="text-slate-400">（未作答）</span>
+                              ) : r.isCorrect ? (
+                                <span className="text-emerald-700 font-medium">{userNorm}</span>
+                              ) : (
+                                <span className="font-medium break-words">
+                                  {renderDiffUser(diff.userParts)}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <span className="text-slate-500 mr-2">正確答案：</span>
+                              {r.isCorrect ? (
+                                <span className="text-slate-900 font-semibold">{correctNorm}</span>
+                              ) : (
+                                <span className="break-words">
+                                  {renderDiffCorrect(diff.correctParts)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <span className="text-slate-500 mr-2">正確答案：</span>
-                          <span className="text-slate-900 font-semibold">{r.question.answer}</span>
-                        </div>
-                      </div>
-                    </div>
+                      );
+                    })()
                   ) : (
                     <div
                       key={r.question.id}
