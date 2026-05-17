@@ -18,6 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ children, activeTab, onNavigate }) => {
     { id: 'home', label: '首頁' },
     { id: 'quiz', label: '開始測驗' },
     { id: 'dabu-tie', label: '國文大補帖' },
+    { id: 'english', label: '英文' },
     { id: 'history', label: '歷史紀錄' },
   ];
 

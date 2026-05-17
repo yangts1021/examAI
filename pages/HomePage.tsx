@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../components/Button';
-import EnglishQuizSection from '../components/EnglishQuizSection';
 import { AppRoute } from '../types';
 import { getGasUrl, setGasUrl } from '../services/gasService';
 
@@ -74,8 +73,6 @@ const HomePage: React.FC<HomePageProps> = ({ onNavigate }) => {
 
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-12">
-      <EnglishQuizSection />
-
       <div className="text-center space-y-4 max-w-2xl">
         <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight sm:text-5xl">
           AI 智慧助攻，考試更輕鬆 <span className="text-sm font-normal text-slate-400">(v1.8)</span>

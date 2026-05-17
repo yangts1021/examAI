@@ -1,0 +1,342 @@
+import React, { useState } from 'react';
+import Button from '../components/Button';
+
+interface QuizItem {
+  ch: string;
+  en: string;
+}
+
+const QUIZ_DATA: QuizItem[] = [
+  { ch: '1. 海水每天都變得更髒更暖。', en: 'The water gets dirtier and warmer every day.' },
+  { ch: '2. 他們甚至沒有機會長大。', en: "They won't even have a chance to grow up." },
+  { ch: '3. 請留給我們乾淨的住所,並停止殺害我們。', en: 'Please leave some clean places for us and stop killing us.' },
+  { ch: '4. 我們再也等不了了。', en: 'We cannot wait any longer.' },
+  { ch: '5. 由於他辛勤的努力,世界上有許多的西瓜種子都來自於他的公司。', en: 'Thanks to his hard work, lots of watermelon seeds in the world came from his company.' },
+  { ch: '6. 他們的努力幫助這座島嶼成為水果天堂。', en: 'Their efforts help make the island a fruit paradise.' },
+  { ch: '7. 現在有甚麼是當季的水果呢?', en: 'What is in season now?' },
+  { ch: '8. 他們在臺南的一個傳統市場。', en: 'They are at a traditional market in Tainan.' },
+];
+
+const speak = (text: string, rate = 1) => {
+  if (!('speechSynthesis' in window)) return;
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = 'en-US';
+  msg.rate = rate;
+  window.speechSynthesis.cancel();
+  window.speechSynthesis.speak(msg);
+};
+
+// ───────── LCS word-diff (用於測驗批改) ─────────
+type DiffOp = 'match' | 'add' | 'remove';
+interface DiffPart {
+  text: string;
+  type: DiffOp;
+}
+
+const normWord = (w: string) => w.toLowerCase().replace(/[.,!?;:'"`’]/g, '');
+
+const diffWords = (
+  user: string[],
+  correct: string[],
+): { userParts: DiffPart[]; correctParts: DiffPart[] } => {
+  const m = user.length;
+  const n = correct.length;
+  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] =
+        normWord(user[i - 1]) === normWord(correct[j - 1])
+          ? dp[i - 1][j - 1] + 1
+          : Math.max(dp[i - 1][j], dp[i][j - 1]);
+    }
+  }
+  const userOut: DiffPart[] = [];
+  const correctOut: DiffPart[] = [];
+  let i = m;
+  let j = n;
+  while (i > 0 && j > 0) {
+    if (normWord(user[i - 1]) === normWord(correct[j - 1])) {
+      userOut.unshift({ text: user[i - 1], type: 'match' });
+      correctOut.unshift({ text: correct[j - 1], type: 'match' });
+      i--;
+      j--;
+    } else if (dp[i - 1][j] >= dp[i][j - 1]) {
+      userOut.unshift({ text: user[i - 1], type: 'remove' });
+      i--;
+    } else {
+      correctOut.unshift({ text: correct[j - 1], type: 'add' });
+      j--;
+    }
+  }
+  while (i > 0) userOut.unshift({ text: user[--i], type: 'remove' });
+  while (j > 0) correctOut.unshift({ text: correct[--j], type: 'add' });
+  return { userParts: userOut, correctParts: correctOut };
+};
+
+// ───────── 教學：單字與整句發音 + 語速調整 ─────────
+const TeachItem: React.FC<{ item: QuizItem; rate: number }> = ({ item, rate }) => {
+  const shelfWords = item.en.replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean);
+  return (
+    <div className="border border-slate-200 rounded-lg p-4 bg-white">
+      <div className="text-base sm:text-lg font-semibold text-slate-800 mb-3">{item.ch}</div>
+      <div className="flex flex-wrap gap-2 mb-3">
+        {shelfWords.map((w, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => speak(w, rate)}
+            className="bg-sky-50 hover:bg-sky-600 hover:text-white px-3 py-1 rounded-full border border-sky-200 text-sm transition-colors"
+          >
+            {w}
+          </button>
+        ))}
+      </div>
+      <button
+        type="button"
+        onClick={() => speak(item.en, rate)}
+        className="bg-indigo-50 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-md border border-indigo-200 text-sm transition-colors"
+      >
+        🔊 朗讀整句
+      </button>
+    </div>
+  );
+};
+
+const TeachView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  const [rate, setRate] = useState(1);
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-slate-900">英文 · 教學</h2>
+        <Button variant="outline" size="sm" onClick={onBack}>
+          返回
+        </Button>
+      </div>
+
+      <div className="sticky top-16 z-[5] bg-slate-50/95 backdrop-blur border border-slate-200 rounded-xl p-4">
+        <div className="flex items-center gap-3">
+          <label htmlFor="rate" className="text-sm font-medium text-slate-700 shrink-0">
+            語速
+          </label>
+          <input
+            id="rate"
+            type="range"
+            min={0.5}
+            max={1.5}
+            step={0.05}
+            value={rate}
+            onChange={(e) => setRate(parseFloat(e.target.value))}
+            className="flex-1 accent-blue-600"
+          />
+          <span className="text-sm tabular-nums w-12 text-right text-slate-700">
+            {rate.toFixed(2)}x
+          </span>
+          <button
+            type="button"
+            onClick={() => setRate(1)}
+            className="text-xs text-slate-500 hover:text-slate-700 underline"
+          >
+            重設
+          </button>
+        </div>
+        <p className="text-xs text-slate-500 mt-2">
+          💡 點擊單字或「朗讀整句」可發音,並依目前語速播放。
+        </p>
+      </div>
+
+      <div className="space-y-3">
+        {QUIZ_DATA.map((item, idx) => (
+          <TeachItem key={idx} item={item} rate={rate} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ───────── 測驗:中翻英 + 字詞 diff ─────────
+const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
+  const [input, setInput] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  const userWords = input.trim().split(/\s+/).filter(Boolean);
+  const correctWords = item.en.trim().split(/\s+/);
+  const { userParts, correctParts } = diffWords(userWords, correctWords);
+  const isCorrect =
+    submitted &&
+    userParts.length > 0 &&
+    userParts.every((p) => p.type === 'match') &&
+    correctParts.every((p) => p.type === 'match');
+
+  return (
+    <div className="border border-slate-200 rounded-lg p-4 bg-white">
+      <div className="text-base sm:text-lg font-semibold text-slate-800 mb-3">{item.ch}</div>
+      <textarea
+        value={input}
+        onChange={(e) => {
+          setInput(e.target.value);
+          if (submitted) setSubmitted(false);
+        }}
+        placeholder="請在此輸入英文翻譯..."
+        className="w-full h-16 p-2.5 border-2 border-slate-200 rounded-md text-base resize-none focus:border-blue-500 focus:outline-none"
+      />
+      <div className="mt-2 flex gap-2">
+        <button
+          type="button"
+          onClick={() => setSubmitted(true)}
+          className="bg-slate-700 hover:bg-slate-800 text-white px-5 py-2 rounded-md text-sm font-medium"
+        >
+          檢查答案
+        </button>
+        {submitted && (
+          <button
+            type="button"
+            onClick={() => {
+              setInput('');
+              setSubmitted(false);
+            }}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-md text-sm"
+          >
+            重做
+          </button>
+        )}
+      </div>
+
+      {submitted && (
+        <div
+          className={`mt-3 p-3 rounded-md text-sm sm:text-base ${
+            isCorrect
+              ? 'bg-emerald-50 border border-emerald-200'
+              : 'bg-amber-50 border border-amber-200'
+          }`}
+        >
+          {isCorrect ? (
+            <div className="text-emerald-700 font-semibold">✓ 完全正確!</div>
+          ) : (
+            <>
+              <div className="mb-1.5">
+                <span className="text-xs text-slate-500 mr-2">你的答案:</span>
+                {userParts.length === 0 ? (
+                  <span className="text-slate-400">(未作答)</span>
+                ) : (
+                  userParts.map((p, i) =>
+                    p.type === 'match' ? (
+                      <span key={i} className="text-slate-700">
+                        {p.text}{' '}
+                      </span>
+                    ) : (
+                      <span
+                        key={i}
+                        className="text-red-700 bg-red-100 line-through rounded px-1 mr-1"
+                      >
+                        {p.text}
+                      </span>
+                    ),
+                  )
+                )}
+              </div>
+              <div>
+                <span className="text-xs text-slate-500 mr-2">正確答案:</span>
+                {correctParts.map((p, i) =>
+                  p.type === 'match' ? (
+                    <span key={i} className="text-slate-700">
+                      {p.text}{' '}
+                    </span>
+                  ) : (
+                    <span
+                      key={i}
+                      className="text-emerald-800 bg-emerald-100 underline decoration-2 underline-offset-2 font-semibold rounded px-1 mr-1"
+                    >
+                      {p.text}
+                    </span>
+                  ),
+                )}
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const QuizView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold text-slate-900">英文 · 中翻英測驗</h2>
+        <Button variant="outline" size="sm" onClick={onBack}>
+          返回
+        </Button>
+      </div>
+      <p className="text-sm text-slate-500">輸入英文翻譯後,點擊「檢查答案」即可批改。</p>
+      <div className="space-y-3">
+        {QUIZ_DATA.map((item, idx) => (
+          <QuizItemRow key={idx} item={item} />
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// ───────── 主頁:卡片選擇 ─────────
+type Mode = 'select' | 'teach' | 'quiz';
+
+const EnglishPage: React.FC = () => {
+  const [mode, setMode] = useState<Mode>('select');
+
+  if (mode === 'teach') {
+    return (
+      <div className="max-w-4xl mx-auto py-4">
+        <TeachView onBack={() => setMode('select')} />
+      </div>
+    );
+  }
+  if (mode === 'quiz') {
+    return (
+      <div className="max-w-4xl mx-auto py-4">
+        <QuizView onBack={() => setMode('select')} />
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto py-8 space-y-8">
+      <div className="text-center space-y-2">
+        <h2 className="text-3xl font-extrabold text-slate-900">英文</h2>
+        <p className="text-slate-600">選擇模式開始練習</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <button
+          type="button"
+          onClick={() => setMode('teach')}
+          className="text-left bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all p-6"
+        >
+          <div className="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center mb-4 text-2xl">
+            🔊
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">教學</h3>
+          <p className="text-slate-500 text-sm">
+            點擊單字或整句聽發音,可調整語速反覆聆聽,熟悉句子節奏與字彙發音。
+          </p>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMode('quiz')}
+          className="text-left bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-emerald-300 transition-all p-6"
+        >
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-2xl">
+            ✏️
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-2">中翻英測驗</h3>
+          <p className="text-slate-500 text-sm">
+            輸入英文翻譯,即時批改並顯示與正確答案的字詞差異,協助找出錯字與遺漏。
+          </p>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default EnglishPage;

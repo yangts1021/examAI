@@ -4,6 +4,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import QuizPage from './pages/QuizPage';
 import DabuTiePage from './pages/DabuTiePage';
+import EnglishPage from './pages/EnglishPage';
 
 import HistoryPage from './pages/HistoryPage';
 
@@ -50,6 +51,8 @@ const App: React.FC = () => {
         return <HistoryPage onNavigate={navigate} />;
       case AppRoute.DABU_TIE:
         return <DabuTiePage />;
+      case AppRoute.ENGLISH:
+        return <EnglishPage />;
       case AppRoute.HOME:
       default:
         return <HomePage onNavigate={(r) => navigate(r)} />;

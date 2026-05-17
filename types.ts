@@ -49,4 +49,5 @@ export enum AppRoute {
   QUIZ = 'quiz',
   HISTORY = 'history',
   DABU_TIE = 'dabu-tie',
+  ENGLISH = 'english',
 }
