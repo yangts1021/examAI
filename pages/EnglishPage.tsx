@@ -77,15 +77,15 @@ const diffWords = (
 const TeachItem: React.FC<{ item: QuizItem; rate: number }> = ({ item, rate }) => {
   const shelfWords = item.en.replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean);
   return (
-    <div className="border border-slate-200 rounded-lg p-4 bg-white">
-      <div className="text-base sm:text-lg font-semibold text-slate-800 mb-3">{item.ch}</div>
+    <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
+      <div className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{item.ch}</div>
       <div className="flex flex-wrap gap-2 mb-3">
         {shelfWords.map((w, i) => (
           <button
             key={i}
             type="button"
             onClick={() => speak(w, rate)}
-            className="bg-sky-50 hover:bg-sky-600 hover:text-white px-3 py-1 rounded-full border border-sky-200 text-sm transition-colors"
+            className="bg-sky-50 hover:bg-sky-600 hover:text-white dark:bg-sky-900/40 dark:text-sky-200 dark:hover:bg-sky-600 dark:hover:text-white px-3 py-1 rounded-full border border-sky-200 dark:border-sky-700 text-sm transition-colors"
           >
             {w}
           </button>
@@ -94,7 +94,7 @@ const TeachItem: React.FC<{ item: QuizItem; rate: number }> = ({ item, rate }) =
       <button
         type="button"
         onClick={() => speak(item.en, rate)}
-        className="bg-indigo-50 hover:bg-indigo-600 hover:text-white px-4 py-1.5 rounded-md border border-indigo-200 text-sm transition-colors"
+        className="bg-indigo-50 hover:bg-indigo-600 hover:text-white dark:bg-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-600 dark:hover:text-white px-4 py-1.5 rounded-md border border-indigo-200 dark:border-indigo-700 text-sm transition-colors"
       >
         🔊 朗讀整句
       </button>
@@ -107,15 +107,15 @@ const TeachView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">英文 · 教學</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">英文 · 教學</h2>
         <Button variant="outline" size="sm" onClick={onBack}>
           返回
         </Button>
       </div>
 
-      <div className="sticky top-16 z-[5] bg-slate-50/95 backdrop-blur border border-slate-200 rounded-xl p-4">
+      <div className="sticky top-16 z-[5] bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-4">
         <div className="flex items-center gap-3">
-          <label htmlFor="rate" className="text-sm font-medium text-slate-700 shrink-0">
+          <label htmlFor="rate" className="text-sm font-medium text-slate-700 dark:text-slate-200 shrink-0">
             語速
           </label>
           <input
@@ -128,18 +128,18 @@ const TeachView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             onChange={(e) => setRate(parseFloat(e.target.value))}
             className="flex-1 accent-blue-600"
           />
-          <span className="text-sm tabular-nums w-12 text-right text-slate-700">
+          <span className="text-sm tabular-nums w-12 text-right text-slate-700 dark:text-slate-200">
             {rate.toFixed(2)}x
           </span>
           <button
             type="button"
             onClick={() => setRate(1)}
-            className="text-xs text-slate-500 hover:text-slate-700 underline"
+            className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 underline"
           >
             重設
           </button>
         </div>
-        <p className="text-xs text-slate-500 mt-2">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
           💡 點擊單字或「朗讀整句」可發音,並依目前語速播放。
         </p>
       </div>
@@ -168,8 +168,8 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
     correctParts.every((p) => p.type === 'match');
 
   return (
-    <div className="border border-slate-200 rounded-lg p-4 bg-white">
-      <div className="text-base sm:text-lg font-semibold text-slate-800 mb-3">{item.ch}</div>
+    <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
+      <div className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{item.ch}</div>
       <textarea
         value={input}
         onChange={(e) => {
@@ -177,13 +177,13 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
           if (submitted) setSubmitted(false);
         }}
         placeholder="請在此輸入英文翻譯..."
-        className="w-full h-16 p-2.5 border-2 border-slate-200 rounded-md text-base resize-none focus:border-blue-500 focus:outline-none"
+        className="w-full h-16 p-2.5 border-2 border-slate-200 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 rounded-md text-base resize-none focus:border-blue-500 focus:outline-none"
       />
       <div className="mt-2 flex gap-2">
         <button
           type="button"
           onClick={() => setSubmitted(true)}
-          className="bg-slate-700 hover:bg-slate-800 text-white px-5 py-2 rounded-md text-sm font-medium"
+          className="bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500 text-white px-5 py-2 rounded-md text-sm font-medium"
         >
           檢查答案
         </button>
@@ -194,7 +194,7 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
               setInput('');
               setSubmitted(false);
             }}
-            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-md text-sm"
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 px-4 py-2 rounded-md text-sm"
           >
             重做
           </button>
@@ -205,28 +205,28 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
         <div
           className={`mt-3 p-3 rounded-md text-sm sm:text-base ${
             isCorrect
-              ? 'bg-emerald-50 border border-emerald-200'
-              : 'bg-amber-50 border border-amber-200'
+              ? 'bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/30 dark:border-emerald-700'
+              : 'bg-amber-50 border border-amber-200 dark:bg-amber-900/20 dark:border-amber-700'
           }`}
         >
           {isCorrect ? (
-            <div className="text-emerald-700 font-semibold">✓ 完全正確!</div>
+            <div className="text-emerald-700 dark:text-emerald-300 font-semibold">✓ 完全正確!</div>
           ) : (
             <>
               <div className="mb-1.5">
-                <span className="text-xs text-slate-500 mr-2">你的答案:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mr-2">你的答案:</span>
                 {userParts.length === 0 ? (
-                  <span className="text-slate-400">(未作答)</span>
+                  <span className="text-slate-400 dark:text-slate-500">(未作答)</span>
                 ) : (
                   userParts.map((p, i) =>
                     p.type === 'match' ? (
-                      <span key={i} className="text-slate-700">
+                      <span key={i} className="text-slate-700 dark:text-slate-200">
                         {p.text}{' '}
                       </span>
                     ) : (
                       <span
                         key={i}
-                        className="text-red-700 bg-red-100 line-through rounded px-1 mr-1"
+                        className="text-red-700 bg-red-100 dark:text-red-200 dark:bg-red-900/50 line-through rounded px-1 mr-1"
                       >
                         {p.text}
                       </span>
@@ -235,16 +235,16 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
                 )}
               </div>
               <div>
-                <span className="text-xs text-slate-500 mr-2">正確答案:</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400 mr-2">正確答案:</span>
                 {correctParts.map((p, i) =>
                   p.type === 'match' ? (
-                    <span key={i} className="text-slate-700">
+                    <span key={i} className="text-slate-700 dark:text-slate-200">
                       {p.text}{' '}
                     </span>
                   ) : (
                     <span
                       key={i}
-                      className="text-emerald-800 bg-emerald-100 underline decoration-2 underline-offset-2 font-semibold rounded px-1 mr-1"
+                      className="text-emerald-800 bg-emerald-100 dark:text-emerald-200 dark:bg-emerald-900/50 underline decoration-2 underline-offset-2 font-semibold rounded px-1 mr-1"
                     >
                       {p.text}
                     </span>
@@ -263,12 +263,12 @@ const QuizView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900">英文 · 中翻英測驗</h2>
+        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">英文 · 中翻英測驗</h2>
         <Button variant="outline" size="sm" onClick={onBack}>
           返回
         </Button>
       </div>
-      <p className="text-sm text-slate-500">輸入英文翻譯後,點擊「檢查答案」即可批改。</p>
+      <p className="text-sm text-slate-500 dark:text-slate-400">輸入英文翻譯後,點擊「檢查答案」即可批改。</p>
       <div className="space-y-3">
         {QUIZ_DATA.map((item, idx) => (
           <QuizItemRow key={idx} item={item} />
@@ -302,21 +302,21 @@ const EnglishPage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto py-8 space-y-8">
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-extrabold text-slate-900">英文</h2>
-        <p className="text-slate-600">選擇模式開始練習</p>
+        <h2 className="text-3xl font-extrabold text-slate-900 dark:text-slate-100">英文</h2>
+        <p className="text-slate-600 dark:text-slate-300">選擇模式開始練習</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <button
           type="button"
           onClick={() => setMode('teach')}
-          className="text-left bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-blue-300 transition-all p-6"
+          className="text-left bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-500 transition-all p-6"
         >
-          <div className="w-12 h-12 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center mb-4 text-2xl">
+          <div className="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 flex items-center justify-center mb-4 text-2xl">
             🔊
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">教學</h3>
-          <p className="text-slate-500 text-sm">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">教學</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             點擊單字或整句聽發音,可調整語速反覆聆聽,熟悉句子節奏與字彙發音。
           </p>
         </button>
@@ -324,13 +324,13 @@ const EnglishPage: React.FC = () => {
         <button
           type="button"
           onClick={() => setMode('quiz')}
-          className="text-left bg-white rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg hover:border-emerald-300 transition-all p-6"
+          className="text-left bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-500 transition-all p-6"
         >
-          <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center mb-4 text-2xl">
+          <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 flex items-center justify-center mb-4 text-2xl">
             ✏️
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">中翻英測驗</h3>
-          <p className="text-slate-500 text-sm">
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">中翻英測驗</h3>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">
             輸入英文翻譯,即時批改並顯示與正確答案的字詞差異,協助找出錯字與遺漏。
           </p>
         </button>
