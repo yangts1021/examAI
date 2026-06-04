@@ -418,13 +418,56 @@ const QuizView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 // ───────── 主頁:卡片選擇 ─────────
 type Mode = 'select' | 'teach' | 'quiz';
 
+// ───────── 教學：課程選單 ─────────
+const LessonMenu: React.FC<{
+  onBack: () => void;
+  onSelect: (lessonId: string) => void;
+}> = ({ onBack, onSelect }) => (
+  <div className="space-y-4">
+    <div className="flex items-center justify-between">
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">英文 · 教學</h2>
+      <Button variant="outline" size="sm" onClick={onBack}>
+        返回
+      </Button>
+    </div>
+    <p className="text-sm text-slate-500 dark:text-slate-400">選擇課程開始點讀練習。</p>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {ENGLISH_LESSONS.map((lesson) => (
+        <button
+          key={lesson.id}
+          type="button"
+          onClick={() => onSelect(lesson.id)}
+          className="text-left bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-sky-300 dark:hover:border-sky-500 transition-all p-6"
+        >
+          <div className="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 flex items-center justify-center mb-4 text-2xl">
+            📖
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-1">{lesson.title}</h3>
+          {lesson.subtitle && (
+            <p className="text-slate-500 dark:text-slate-400 text-sm">{lesson.subtitle}</p>
+          )}
+        </button>
+      ))}
+    </div>
+  </div>
+);
+
 const EnglishPage: React.FC = () => {
   const [mode, setMode] = useState<Mode>('select');
+  const [lessonId, setLessonId] = useState<string | null>(null);
 
   if (mode === 'teach') {
+    const lesson = lessonId ? ENGLISH_LESSONS.find((l) => l.id === lessonId) : undefined;
+    if (lesson) {
+      return (
+        <div className="max-w-4xl mx-auto py-4">
+          <TeachView onBack={() => setLessonId(null)} lesson={lesson} />
+        </div>
+      );
+    }
     return (
       <div className="max-w-4xl mx-auto py-4">
-        <TeachView onBack={() => setMode('select')} lesson={ENGLISH_LESSONS[0]} />
+        <LessonMenu onBack={() => setMode('select')} onSelect={setLessonId} />
       </div>
     );
   }
