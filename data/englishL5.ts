@@ -26,12 +26,18 @@ export interface Article {
   lines: ArticleLine[];
 }
 
+export interface QuizSentence {
+  zh: string; // 中文題目
+  en: string; // 正確英文答案
+}
+
 export interface EnglishLesson {
   id: string;
   title: string;
   subtitle?: string;
   vocabGroups: VocabGroup[];
   articles: Article[];
+  quizSentences: QuizSentence[];
 }
 
 const LESSON_5: EnglishLesson = {
@@ -183,6 +189,45 @@ const LESSON_5: EnglishLesson = {
         },
       ],
     },
+  ],
+  quizSentences: [
+    { zh: '那是什麼奇怪的聲音？', en: "What's that strange sound?" },
+    { zh: '看，它是從電視上的火車傳來的。', en: "Look, it's from the train on TV." },
+    {
+      zh: '那列火車正經過一個隧道並發出很大的噪音。',
+      en: "It's going through a tunnel now and making a lot of noise.",
+    },
+    { zh: '雖然它跑得很快，但一點也不吵。', en: "Although it's running fast, it's not noisy at all." },
+    { zh: '這兩列火車都很快。', en: 'Both of the trains are fast.' },
+    { zh: '如果附近有人，我們可以詢問。', en: "If someone's around, we can ask." },
+    { zh: '我沒有看到這裡有人。', en: "I don't see anyone here." },
+    {
+      zh: '人們利用動物身體的形狀來製造有用的東西。',
+      en: "People use the shape of animals' bodies to make useful things.",
+    },
+    { zh: '日本的子彈列車就是個好例子。', en: 'The bullet train in Japan is a good example.' },
+    {
+      zh: '人們不喜歡那些嘈雜的火車，因此他們改變了火車的設計。',
+      en: "People didn't like those noisy trains, so they changed their design.",
+    },
+    {
+      zh: '那特別的外形也幫助火車跑得比以前更快了。',
+      en: 'The special shape also helps the trains run faster than before.',
+    },
+    {
+      zh: '人們向大自然學習並創造出有用的東西來讓他們的生活更好。',
+      en: 'People learn from nature and create useful things to make their lives better.',
+    },
+    { zh: '鯊魚是一個很棒的例子。', en: 'The shark is a great example.' },
+    {
+      zh: '這些魚鱗看起來像牙齒，從鯊魚的頂端覆蓋到尾部。',
+      en: 'These scales look like teeth and cover the shark from tip to tail.',
+    },
+    {
+      zh: '有了其中一種這類的泳衣，人們可以游得更快。',
+      en: 'With one of these swimsuits, people can swim much faster.',
+    },
+    { zh: '大自然是最好的老師。', en: 'Mother Nature is the best teacher.' },
   ],
 };
 

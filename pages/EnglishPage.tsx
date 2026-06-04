@@ -1,22 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
-import { ENGLISH_LESSONS, EnglishLesson, Article } from '../data/englishL5';
-
-interface QuizItem {
-  ch: string;
-  en: string;
-}
-
-const QUIZ_DATA: QuizItem[] = [
-  { ch: '1. 海水每天都變得更髒更暖。', en: 'The water gets dirtier and warmer every day.' },
-  { ch: '2. 他們甚至沒有機會長大。', en: "They won't even have a chance to grow up." },
-  { ch: '3. 請留給我們乾淨的住所,並停止殺害我們。', en: 'Please leave some clean places for us and stop killing us.' },
-  { ch: '4. 我們再也等不了了。', en: 'We cannot wait any longer.' },
-  { ch: '5. 由於他辛勤的努力,世界上有許多的西瓜種子都來自於他的公司。', en: 'Thanks to his hard work, lots of watermelon seeds in the world came from his company.' },
-  { ch: '6. 他們的努力幫助這座島嶼成為水果天堂。', en: 'Their efforts help make the island a fruit paradise.' },
-  { ch: '7. 現在有甚麼是當季的水果呢?', en: 'What is in season now?' },
-  { ch: '8. 他們在臺南的一個傳統市場。', en: 'They are at a traditional market in Tainan.' },
-];
+import { ENGLISH_LESSONS, EnglishLesson, Article, QuizSentence } from '../data/englishL5';
 
 const speak = (text: string, rate = 1) => {
   if (!('speechSynthesis' in window)) return;
@@ -291,7 +275,7 @@ const TeachView: React.FC<{ onBack: () => void; lesson: EnglishLesson }> = ({ on
 };
 
 // ───────── 測驗:中翻英 + 字詞 diff ─────────
-const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
+const QuizItemRow: React.FC<{ item: QuizSentence; index: number }> = ({ item, index }) => {
   const [input, setInput] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -306,7 +290,9 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
 
   return (
     <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
-      <div className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{item.ch}</div>
+      <div className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">
+        {index + 1}. {item.zh}
+      </div>
       <textarea
         value={input}
         onChange={(e) => {
@@ -396,19 +382,26 @@ const QuizItemRow: React.FC<{ item: QuizItem }> = ({ item }) => {
   );
 };
 
-const QuizView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+const QuizView: React.FC<{ onBack: () => void; lesson: EnglishLesson }> = ({ onBack, lesson }) => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">英文 · 中翻英測驗</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            英文 · 中翻英測驗 · {lesson.title}
+          </h2>
+          {lesson.subtitle && (
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{lesson.subtitle}</p>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={onBack}>
           返回
         </Button>
       </div>
       <p className="text-sm text-slate-500 dark:text-slate-400">輸入英文翻譯後,點擊「檢查答案」即可批改。</p>
       <div className="space-y-3">
-        {QUIZ_DATA.map((item, idx) => (
-          <QuizItemRow key={idx} item={item} />
+        {lesson.quizSentences.map((item, idx) => (
+          <QuizItemRow key={idx} item={item} index={idx} />
         ))}
       </div>
     </div>
@@ -418,19 +411,21 @@ const QuizView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 // ───────── 主頁:卡片選擇 ─────────
 type Mode = 'select' | 'teach' | 'quiz';
 
-// ───────── 教學：課程選單 ─────────
+// ───────── 課程選單（教學 / 測驗共用）─────────
 const LessonMenu: React.FC<{
+  title: string;
+  hint: string;
   onBack: () => void;
   onSelect: (lessonId: string) => void;
-}> = ({ onBack, onSelect }) => (
+}> = ({ title, hint, onBack, onSelect }) => (
   <div className="space-y-4">
     <div className="flex items-center justify-between">
-      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">英文 · 教學</h2>
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{title}</h2>
       <Button variant="outline" size="sm" onClick={onBack}>
         返回
       </Button>
     </div>
-    <p className="text-sm text-slate-500 dark:text-slate-400">選擇課程開始點讀練習。</p>
+    <p className="text-sm text-slate-500 dark:text-slate-400">{hint}</p>
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       {ENGLISH_LESSONS.map((lesson) => (
         <button
@@ -456,8 +451,14 @@ const EnglishPage: React.FC = () => {
   const [mode, setMode] = useState<Mode>('select');
   const [lessonId, setLessonId] = useState<string | null>(null);
 
+  const goMode = (m: Mode) => {
+    setLessonId(null);
+    setMode(m);
+  };
+
+  const lesson = lessonId ? ENGLISH_LESSONS.find((l) => l.id === lessonId) : undefined;
+
   if (mode === 'teach') {
-    const lesson = lessonId ? ENGLISH_LESSONS.find((l) => l.id === lessonId) : undefined;
     if (lesson) {
       return (
         <div className="max-w-4xl mx-auto py-4">
@@ -467,14 +468,31 @@ const EnglishPage: React.FC = () => {
     }
     return (
       <div className="max-w-4xl mx-auto py-4">
-        <LessonMenu onBack={() => setMode('select')} onSelect={setLessonId} />
+        <LessonMenu
+          title="英文 · 教學"
+          hint="選擇課程開始點讀練習。"
+          onBack={() => setMode('select')}
+          onSelect={setLessonId}
+        />
       </div>
     );
   }
   if (mode === 'quiz') {
+    if (lesson) {
+      return (
+        <div className="max-w-4xl mx-auto py-4">
+          <QuizView onBack={() => setLessonId(null)} lesson={lesson} />
+        </div>
+      );
+    }
     return (
       <div className="max-w-4xl mx-auto py-4">
-        <QuizView onBack={() => setMode('select')} />
+        <LessonMenu
+          title="英文 · 中翻英測驗"
+          hint="選擇課程開始中翻英測驗。"
+          onBack={() => setMode('select')}
+          onSelect={setLessonId}
+        />
       </div>
     );
   }
@@ -489,7 +507,7 @@ const EnglishPage: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <button
           type="button"
-          onClick={() => setMode('teach')}
+          onClick={() => goMode('teach')}
           className="text-left bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-blue-300 dark:hover:border-blue-500 transition-all p-6"
         >
           <div className="w-12 h-12 rounded-xl bg-sky-100 dark:bg-sky-900/40 text-sky-600 dark:text-sky-300 flex items-center justify-center mb-4 text-2xl">
@@ -503,7 +521,7 @@ const EnglishPage: React.FC = () => {
 
         <button
           type="button"
-          onClick={() => setMode('quiz')}
+          onClick={() => goMode('quiz')}
           className="text-left bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 hover:shadow-lg hover:border-emerald-300 dark:hover:border-emerald-500 transition-all p-6"
         >
           <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 flex items-center justify-center mb-4 text-2xl">
