@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
+import { ENGLISH_LESSONS, EnglishLesson, Article } from '../data/englishL5';
 
 interface QuizItem {
   ch: string;
@@ -73,47 +74,152 @@ const diffWords = (
   return { userParts: userOut, correctParts: correctOut };
 };
 
-// ───────── 教學：單字與整句發音 + 語速調整 ─────────
-const TeachItem: React.FC<{ item: QuizItem; rate: number }> = ({ item, rate }) => {
-  const shelfWords = item.en.replace(/[.,!?;:]/g, '').split(/\s+/).filter(Boolean);
+// ───────── 教學：單字與文章點讀 + 語速調整 ─────────
+
+// 去除單字前後標點，用於發音（保留大小寫）
+const cleanForSpeak = (w: string) => w.replace(/^[^A-Za-z']+|[^A-Za-z']+$/g, '');
+
+// 將句子切成可點讀的 token（保留空白與標點），每個含字母的詞可點擊發音
+const ClickableSentence: React.FC<{ text: string; rate: number }> = ({ text, rate }) => {
+  const tokens = text.split(/(\s+)/);
   return (
-    <div className="border border-slate-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-800">
-      <div className="text-base sm:text-lg font-semibold text-slate-800 dark:text-slate-100 mb-3">{item.ch}</div>
-      <div className="flex flex-wrap gap-2 mb-3">
-        {shelfWords.map((w, i) => (
-          <button
+    <span>
+      {tokens.map((tok, i) => {
+        if (/^\s+$/.test(tok) || tok === '') return <span key={i}>{tok}</span>;
+        const speakable = cleanForSpeak(tok);
+        if (!speakable) return <span key={i}>{tok}</span>;
+        return (
+          <span
             key={i}
-            type="button"
-            onClick={() => speak(w, rate)}
-            className="bg-sky-50 hover:bg-sky-600 hover:text-white dark:bg-sky-900/40 dark:text-sky-200 dark:hover:bg-sky-600 dark:hover:text-white px-3 py-1 rounded-full border border-sky-200 dark:border-sky-700 text-sm transition-colors"
+            role="button"
+            tabIndex={0}
+            onClick={() => speak(speakable, rate)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                speak(speakable, rate);
+              }
+            }}
+            className="cursor-pointer rounded px-0.5 hover:bg-sky-100 dark:hover:bg-sky-800/60 hover:text-sky-700 dark:hover:text-sky-200 transition-colors"
           >
-            {w}
-          </button>
+            {tok}
+          </span>
+        );
+      })}
+    </span>
+  );
+};
+
+// 單字卡：點擊發音
+const VocabChip: React.FC<{ word: string; pos?: string; meaning: string; rate: number }> = ({
+  word,
+  pos,
+  meaning,
+  rate,
+}) => (
+  <button
+    type="button"
+    onClick={() => speak(word, rate)}
+    className="text-left bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-3 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-sm transition-all"
+  >
+    <div className="flex items-center gap-1.5">
+      <span className="text-sky-600 dark:text-sky-300 text-sm">🔊</span>
+      <span className="font-semibold text-slate-800 dark:text-slate-100">{word}</span>
+      {pos && <span className="text-xs text-slate-400 dark:text-slate-500">{pos}</span>}
+    </div>
+    <div className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{meaning}</div>
+  </button>
+);
+
+// 文章點讀：逐句可點讀，並可切換中文翻譯
+const ArticleView: React.FC<{ article: Article; rate: number }> = ({ article, rate }) => {
+  const [showZh, setShowZh] = useState(true);
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{article.title}</h3>
+        <button
+          type="button"
+          onClick={() => setShowZh((v) => !v)}
+          className="text-xs px-3 py-1 rounded-full border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+        >
+          {showZh ? '隱藏中文' : '顯示中文'}
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {article.lines.map((line, idx) => (
+          <div
+            key={idx}
+            className="border border-slate-200 dark:border-slate-700 rounded-lg p-3 bg-white dark:bg-slate-800"
+          >
+            <div className="flex items-start gap-2">
+              <button
+                type="button"
+                onClick={() => speak(line.en, rate)}
+                title="朗讀整句"
+                className="shrink-0 mt-0.5 w-8 h-8 flex items-center justify-center rounded-md bg-indigo-50 hover:bg-indigo-600 hover:text-white dark:bg-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-600 dark:hover:text-white border border-indigo-200 dark:border-indigo-700 transition-colors"
+              >
+                🔊
+              </button>
+              <div className="flex-1 leading-relaxed">
+                {line.speaker && (
+                  <span className="font-bold text-indigo-600 dark:text-indigo-300 mr-1">
+                    {line.speaker}:
+                  </span>
+                )}
+                <span
+                  className={
+                    line.stage
+                      ? 'italic text-slate-500 dark:text-slate-400'
+                      : 'text-slate-800 dark:text-slate-100'
+                  }
+                >
+                  <ClickableSentence text={line.en} rate={rate} />
+                </span>
+                {showZh && (
+                  <div className="text-sm text-slate-500 dark:text-slate-400 mt-1">{line.zh}</div>
+                )}
+              </div>
+            </div>
+          </div>
         ))}
       </div>
-      <button
-        type="button"
-        onClick={() => speak(item.en, rate)}
-        className="bg-indigo-50 hover:bg-indigo-600 hover:text-white dark:bg-indigo-900/40 dark:text-indigo-200 dark:hover:bg-indigo-600 dark:hover:text-white px-4 py-1.5 rounded-md border border-indigo-200 dark:border-indigo-700 text-sm transition-colors"
-      >
-        🔊 朗讀整句
-      </button>
     </div>
   );
 };
 
-const TeachView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
+type TeachSection = 'vocab' | number; // number = articles 的索引
+
+const TeachView: React.FC<{ onBack: () => void; lesson: EnglishLesson }> = ({ onBack, lesson }) => {
   const [rate, setRate] = useState(1);
+  const [section, setSection] = useState<TeachSection>('vocab');
+
+  const tabs: { key: TeachSection; label: string }[] = [
+    { key: 'vocab', label: '單字' },
+    ...lesson.articles.map((a, i) => ({
+      key: i as TeachSection,
+      label: a.type === 'dialogue' ? '對話' : '閱讀',
+    })),
+  ];
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">英文 · 教學</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+            英文 · 教學 · {lesson.title}
+          </h2>
+          {lesson.subtitle && (
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{lesson.subtitle}</p>
+          )}
+        </div>
         <Button variant="outline" size="sm" onClick={onBack}>
           返回
         </Button>
       </div>
 
-      <div className="sticky top-16 z-[5] bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+      <div className="sticky top-16 z-[5] bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-3">
         <div className="flex items-center gap-3">
           <label htmlFor="rate" className="text-sm font-medium text-slate-700 dark:text-slate-200 shrink-0">
             語速
@@ -139,16 +245,47 @@ const TeachView: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             重設
           </button>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">
-          💡 點擊單字或「朗讀整句」可發音,並依目前語速播放。
+
+        <div className="flex flex-wrap gap-2">
+          {tabs.map((t) => (
+            <button
+              key={String(t.key)}
+              type="button"
+              onClick={() => setSection(t.key)}
+              className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                section === t.key
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          💡 點擊單字或文章中的任一個字可單獨發音,點擊句首的 🔊 可朗讀整句,皆依目前語速播放。
         </p>
       </div>
 
-      <div className="space-y-3">
-        {QUIZ_DATA.map((item, idx) => (
-          <TeachItem key={idx} item={item} rate={rate} />
-        ))}
-      </div>
+      {section === 'vocab' ? (
+        <div className="space-y-6">
+          {lesson.vocabGroups.map((group, gi) => (
+            <div key={gi}>
+              <h3 className="text-base font-bold text-slate-700 dark:text-slate-200 mb-2">
+                {group.title}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {group.words.map((w, wi) => (
+                  <VocabChip key={wi} word={w.word} pos={w.pos} meaning={w.meaning} rate={rate} />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <ArticleView article={lesson.articles[section]} rate={rate} />
+      )}
     </div>
   );
 };
@@ -287,7 +424,7 @@ const EnglishPage: React.FC = () => {
   if (mode === 'teach') {
     return (
       <div className="max-w-4xl mx-auto py-4">
-        <TeachView onBack={() => setMode('select')} />
+        <TeachView onBack={() => setMode('select')} lesson={ENGLISH_LESSONS[0]} />
       </div>
     );
   }
