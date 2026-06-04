@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../components/Button';
-import { ENGLISH_LESSONS, EnglishLesson, Article, QuizSentence } from '../data/englishL5';
+import { ENGLISH_LESSONS, EnglishLesson, Article, QuizSentence } from '../data/englishLessons';
 
 const speak = (text: string, rate = 1) => {
   if (!('speechSynthesis' in window)) return;
